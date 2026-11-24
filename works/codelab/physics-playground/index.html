@@ -1,0 +1,314 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>도형 물리 놀이터</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
+    background: radial-gradient(circle at 30% 20%, #1a2342, #10131c 70%);
+    color: #e2e8f0;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* ---------- 조작 패널 ---------- */
+  .panel {
+    position: fixed;
+    top: 14px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(16, 19, 28, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    backdrop-filter: blur(8px);
+    z-index: 10;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .panel button {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    color: #e2e8f0;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 999px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .panel button:hover { background: rgba(255, 255, 255, 0.18); }
+  .panel button.on { background: #4a63e7; border-color: #4a63e7; }
+
+  .count {
+    font-size: 12.5px;
+    font-weight: 700;
+    color: #94a3b8;
+    padding: 0 6px;
+    min-width: 64px;
+    text-align: center;
+  }
+
+  .hint {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12.5px;
+    color: #7e8aa6;
+    background: rgba(16, 19, 28, 0.6);
+    padding: 6px 14px;
+    border-radius: 999px;
+    z-index: 10;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 560px) { .hint { white-space: normal; width: 86%; } }
+
+  /* ---------- 도형 ---------- */
+  #world { position: fixed; inset: 0; }
+
+  #world span {
+    position: absolute;
+    left: 0;
+    top: 0;
+    opacity: 0.85;
+    will-change: transform;
+  }
+
+  .fs-square { border-radius: 22%; }
+  .fs-circle { border-radius: 50%; }
+  .fs-ring { border-radius: 50%; background: transparent !important; border: 4px solid var(--ring-color, #4a63e7); }
+  .fs-triangle { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+  .fs-plus { clip-path: polygon(35% 0, 65% 0, 65% 35%, 100% 35%, 100% 65%, 65% 65%, 65% 100%, 35% 100%, 35% 65%, 0 65%, 0 35%, 35% 35%); }
+  .fs-diamond { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+  .fs-star { clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+  .fs-hexagon { clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0% 50%); }
+  .fs-pill { clip-path: inset(32% 0 32% 0 round 999px); }
+</style>
+</head>
+<body>
+
+<div id="world"></div>
+
+<div class="panel">
+  <button id="btnAdd" type="button">+ 도형 5개</button>
+  <button id="btnGravity" type="button">🌍 중력 켜기</button>
+  <button id="btnBoom" type="button">💥 폭발</button>
+  <button id="btnReset" type="button">↺ 초기화</button>
+  <span class="count" id="count">도형 0개</span>
+</div>
+
+<p class="hint">마우스를 휘둘러 도형을 쳐보세요 · 빈 곳을 클릭하면 도형이 생깁니다</p>
+
+<script>
+// ============================================
+// 도형 물리 놀이터
+// - 모든 도형은 속도·질량(크기 비례)·회전을 가진 입자
+// - 도형끼리 충돌(운동량 교환), 마우스 타격, 벽 반사
+// - 중력 모드: 아래로 떨어지며 바닥에서 튕김
+// ============================================
+(function () {
+  const COLORS = ["#4a63e7", "#3f9e63", "#2ca8a2", "#e2564a", "#e8971e", "#8b5cf6"];
+  const SHAPES = [
+    "fs-square", "fs-circle", "fs-triangle", "fs-plus", "fs-ring",
+    "fs-diamond", "fs-star", "fs-hexagon", "fs-pill",
+  ];
+
+  const world = document.getElementById("world");
+  const countEl = document.getElementById("count");
+  const MAX = 90;           // 최대 도형 수 (성능 보호)
+  const MOUSE_R = 56;       // 마우스 충돌 반경
+  const REST = 0.9;         // 도형 반발 계수
+  const WALL_REST = 0.75;   // 벽 반발 계수
+
+  let parts = [];
+  let gravityOn = false;
+  let W = innerWidth, H = innerHeight;
+  addEventListener("resize", () => { W = innerWidth; H = innerHeight; });
+
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  function spawn(x, y, burst) {
+    if (parts.length >= MAX) return;
+    const size = Math.round(rand(16, 46));
+    const el = document.createElement("span");
+    el.className = SHAPES[Math.floor(Math.random() * SHAPES.length)];
+    const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+    el.style.width = size + "px";
+    el.style.height = size + "px";
+    if (el.className === "fs-ring") {
+      el.style.setProperty("--ring-color", color);
+      el.style.borderWidth = Math.max(3, Math.round(size / 6)) + "px";
+    } else {
+      el.style.background = color;
+    }
+    world.appendChild(el);
+    const a = Math.random() * Math.PI * 2;
+    const sp = burst ? rand(240, 520) : rand(20, 60);
+    parts.push({
+      el, r: size / 2, m: size * size,
+      x: x !== undefined ? x : rand(size, W - size),
+      y: y !== undefined ? y : rand(size + 70, H - size),
+      vx: Math.cos(a) * sp, vy: Math.sin(a) * sp,
+      ang: Math.random() * 360,
+      baseAv: rand(10, 28) * (Math.random() < 0.5 ? -1 : 1),
+      extraAv: 0, glow: 0,
+    });
+    countEl.textContent = "도형 " + parts.length + "개";
+  }
+
+  function reset(n) {
+    parts.forEach((p) => p.el.remove());
+    parts = [];
+    for (let i = 0; i < n; i++) spawn();
+  }
+
+  // ----- 마우스 -----
+  const mouse = { x: -1e4, y: -1e4, vx: 0, vy: 0, t: 0 };
+  addEventListener("pointermove", (e) => {
+    const now = performance.now();
+    if (mouse.t) {
+      const dt = Math.max(0.008, (now - mouse.t) / 1000);
+      mouse.vx = (e.clientX - mouse.x) / dt;
+      mouse.vy = (e.clientY - mouse.y) / dt;
+    }
+    mouse.x = e.clientX; mouse.y = e.clientY; mouse.t = now;
+  });
+  addEventListener("pointerleave", () => { mouse.x = -1e4; mouse.y = -1e4; mouse.vx = 0; mouse.vy = 0; mouse.t = 0; });
+  addEventListener("pointerdown", (e) => {
+    if (e.target.closest(".panel")) return;
+    spawn(e.clientX, e.clientY);
+  });
+
+  // ----- 조작 버튼 -----
+  document.getElementById("btnAdd").addEventListener("click", () => { for (let i = 0; i < 5; i++) spawn(); });
+  document.getElementById("btnReset").addEventListener("click", () => reset(28));
+  const gBtn = document.getElementById("btnGravity");
+  gBtn.addEventListener("click", () => {
+    gravityOn = !gravityOn;
+    gBtn.textContent = gravityOn ? "🪐 중력 끄기" : "🌍 중력 켜기";
+    gBtn.classList.toggle("on", gravityOn);
+    if (!gravityOn) parts.forEach((p) => { p.vy -= rand(80, 220); }); // 무중력 복귀 시 살짝 떠오름
+  });
+  document.getElementById("btnBoom").addEventListener("click", () => {
+    // 화면 중앙에서 전 도형을 바깥으로 폭발
+    parts.forEach((p) => {
+      const dx = p.x - W / 2, dy = p.y - H / 2;
+      const d = Math.max(40, Math.hypot(dx, dy));
+      p.vx += (dx / d) * rand(500, 900);
+      p.vy += (dy / d) * rand(500, 900);
+      p.extraAv += rand(-700, 700);
+      p.glow = 1;
+    });
+  });
+
+  // ----- 물리 루프 -----
+  let last = performance.now();
+  function step(now) {
+    let dt = (now - last) / 1000;
+    last = now;
+    if (dt <= 0 || dt > 0.08) dt = 0.016;
+
+    const drag = Math.exp(-(gravityOn ? 0.12 : 0.45) * dt);
+    const avDecay = Math.exp(-1.4 * dt);
+    const glowDecay = Math.exp(-2.6 * dt);
+    const mSpeed = Math.min(2600, Math.hypot(mouse.vx, mouse.vy));
+
+    for (const p of parts) {
+      if (gravityOn) {
+        p.vy += 980 * dt;                       // 중력 가속
+      } else {
+        p.vx += (Math.random() - 0.5) * 30 * dt; // 무중력 부유 흔들림
+        p.vy += (Math.random() - 0.5) * 30 * dt;
+      }
+      p.vx *= drag; p.vy *= drag;
+
+      // 마우스 타격
+      const mdx = p.x - mouse.x, mdy = p.y - mouse.y;
+      const md = Math.hypot(mdx, mdy);
+      const minD = p.r + MOUSE_R;
+      if (md < minD && md > 0.001) {
+        const nx = mdx / md, ny = mdy / md;
+        const push = 260 + mSpeed * 0.8;
+        const vn = p.vx * nx + p.vy * ny;
+        if (vn < push) { p.vx += nx * (push - vn); p.vy += ny * (push - vn); }
+        p.extraAv += (Math.random() - 0.5) * 620;
+        p.glow = 1;
+      }
+
+      const sp = Math.hypot(p.vx, p.vy);
+      if (sp > 1400) { p.vx *= 1400 / sp; p.vy *= 1400 / sp; }
+    }
+
+    // 도형끼리 충돌
+    for (let i = 0; i < parts.length; i++) {
+      for (let j = i + 1; j < parts.length; j++) {
+        const a = parts[i], b = parts[j];
+        const dx = b.x - a.x, dy = b.y - a.y;
+        const d = Math.hypot(dx, dy);
+        const minD = a.r + b.r;
+        if (d >= minD || d < 0.001) continue;
+        const nx = dx / d, ny = dy / d;
+        const overlap = minD - d;
+        const ima = 1 / a.m, imb = 1 / b.m, imSum = ima + imb;
+        a.x -= nx * overlap * (ima / imSum); a.y -= ny * overlap * (ima / imSum);
+        b.x += nx * overlap * (imb / imSum); b.y += ny * overlap * (imb / imSum);
+        const rvn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+        if (rvn < 0) {
+          const jImp = -(1 + REST) * rvn / imSum;
+          a.vx -= nx * jImp * ima; a.vy -= ny * jImp * ima;
+          b.vx += nx * jImp * imb; b.vy += ny * jImp * imb;
+          const kick = Math.min(420, Math.abs(jImp) * 0.004);
+          a.extraAv -= kick * (Math.random() < 0.5 ? 1 : -1);
+          b.extraAv += kick * (Math.random() < 0.5 ? 1 : -1);
+          if (Math.abs(rvn) > 100) { a.glow = Math.max(a.glow, 0.7); b.glow = Math.max(b.glow, 0.7); }
+        }
+      }
+    }
+
+    // 이동·벽 반사·렌더
+    for (const p of parts) {
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      if (p.x < p.r)     { p.x = p.r;     p.vx = Math.abs(p.vx) * WALL_REST; }
+      if (p.x > W - p.r) { p.x = W - p.r; p.vx = -Math.abs(p.vx) * WALL_REST; }
+      if (p.y < p.r)     { p.y = p.r;     p.vy = Math.abs(p.vy) * WALL_REST; }
+      if (p.y > H - p.r) {
+        p.y = H - p.r;
+        p.vy = -Math.abs(p.vy) * WALL_REST;
+        if (gravityOn) p.vx *= 0.97; // 바닥 마찰
+      }
+
+      p.extraAv *= avDecay;
+      p.ang += (p.baseAv + p.extraAv) * dt;
+      p.glow *= glowDecay;
+
+      p.el.style.transform =
+        "translate(" + (p.x - p.r).toFixed(1) + "px," + (p.y - p.r).toFixed(1) + "px) " +
+        "rotate(" + p.ang.toFixed(1) + "deg)";
+      p.el.style.opacity = (0.85 + p.glow * 0.15).toFixed(2);
+      p.el.style.filter = p.glow > 0.04 ? "brightness(" + (1 + p.glow * 0.8).toFixed(2) + ")" : "";
+    }
+
+    requestAnimationFrame(step);
+  }
+
+  reset(28);
+  requestAnimationFrame(step);
+})();
+</script>
+</body>
+</html>

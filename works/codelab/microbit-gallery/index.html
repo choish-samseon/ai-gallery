@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>micro:bit 게임 전시회</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="main.css" />
+    <link rel="stylesheet" href="detail.css" />
+  </head>
+  <body>
+    <!-- 네비게이션 -->
+    <nav>
+      <div class="logo" onclick="accessAdmin()">🎮 micro:bit</div>
+      <div class="breadcrumb">
+        <span id="breadcrumb-text" style="display: none">
+          <span onclick="goToList()" style="cursor: pointer; color: var(--sage)"
+            >전시회</span
+          >
+          <span class="separator">/</span>
+          <span id="breadcrumb-game"></span>
+        </span>
+      </div>
+    </nav>
+
+    <div class="container">
+      <!-- 관리자 로그인 모달 -->
+      <div id="adminModal" class="modal">
+        <div class="modal-content">
+          <h2>관리자 로그인</h2>
+          <input
+            type="password"
+            id="adminPassword"
+            placeholder="비밀번호를 입력하세요"
+            onkeypress="if (event.key === 'Enter') loginAdmin();"
+          />
+          <div class="modal-buttons">
+            <button onclick="loginAdmin()" class="btn-primary">로그인</button>
+            <button onclick="closeAdminModal()" class="btn-secondary">
+              취소
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 게임 추가 모달 -->
+      <div id="gameModal" class="modal">
+        <div class="modal-content modal-large">
+          <h2>새 게임 추가</h2>
+          <form id="gameForm" onsubmit="submitNewGame(event)">
+            <div class="form-group">
+              <label for="gameTitle">게임 제목 *</label>
+              <input
+                type="text"
+                id="gameTitle"
+                required
+                placeholder="게임 제목을 입력하세요"
+              />
+            </div>
+            <div class="form-group">
+              <label for="gameCategory">카테고리 *</label>
+              <input
+                type="text"
+                id="gameCategory"
+                required
+                placeholder="카테고리를 입력하세요"
+              />
+            </div>
+            <div class="form-group">
+              <label for="gameAuthor">제작자 *</label>
+              <input
+                type="text"
+                id="gameAuthor"
+                required
+                placeholder="제작자명을 입력하세요"
+              />
+            </div>
+            <div class="form-group">
+              <label for="gameDescription">간단한 설명 *</label>
+              <textarea
+                id="gameDescription"
+                required
+                placeholder="게임에 대한 간단한 설명을 입력하세요"
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label for="gameOverview">게임 개요 *</label>
+              <textarea
+                id="gameOverview"
+                required
+                placeholder="게임의 상세한 개요를 입력하세요"
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label for="gameControls">조작 방법 *</label>
+              <textarea
+                id="gameControls"
+                required
+                placeholder="게임의 조작 방법을 입력하세요"
+              ></textarea>
+            </div>
+            <div class="form-group">
+              <label for="gameDifficulty">난이도 *</label>
+              <select id="gameDifficulty" required>
+                <option value="">난이도 선택</option>
+                <option value="쉬움">쉬움</option>
+                <option value="보통">보통</option>
+                <option value="어려움">어려움</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="gameMakeCodeUrl">MakeCode URL *</label>
+              <input
+                type="url"
+                id="gameMakeCodeUrl"
+                required
+                placeholder="https://makecode.microbit.org/simulator"
+              />
+            </div>
+            <div class="modal-buttons">
+              <button type="submit" class="btn-primary">게임 추가</button>
+              <button
+                type="button"
+                onclick="closeGameModal()"
+                class="btn-secondary"
+              >
+                취소
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- ===== 페이지 1: 게임 목록 ===== -->
+      <div id="listPage" class="active">
+        <div class="list-header">
+          <h1>micro:bit 게임 전시회</h1>
+          <p>학생들이 만든 창의적인 게임들을 탐색하세요</p>
+        </div>
+
+        <div class="list-content">
+          <div class="filters">
+            <div class="filter-group">
+              <label for="categorySelect">카테고리</label>
+              <select id="categorySelect">
+                <option value="">모두</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="add-gamecard" id="add-gamecard">
+            <button onclick="addGameCard()">게임 추가</button>
+          </div>
+
+          <div class="games-grid" id="gamesGrid">
+            <!-- JavaScript로 동적 생성 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== 페이지 2: 게임 상세 ===== -->
+      <div id="detailPage">
+        <div class="detail-content">
+          <button class="back-button" onclick="goToList()">← 목록으로</button>
+
+          <!-- 게임 정보 & 코드 섹션 -->
+          <div class="detail-grid">
+            <!-- 게임 정보 -->
+            <div class="detail-section">
+              <h2>게임 정보</h2>
+              <div class="detail-info">
+                <div class="info-row">
+                  <span class="info-label">제목</span>
+                  <span class="info-value" id="detail-title"></span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">카테고리</span>
+                  <span id="detail-category-badge"></span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">제작자</span>
+                  <span class="info-value" id="detail-author"></span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">설명</span>
+                  <div class="detail-description" id="detail-description"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 추가 정보 -->
+            <div class="detail-section">
+              <h2>게임 상세</h2>
+              <div class="detail-info">
+                <div class="info-row">
+                  <span class="info-label">게임 개요</span>
+                  <div class="detail-description" id="detail-overview"></div>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">조작 방법</span>
+                  <div class="detail-description" id="detail-controls"></div>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">난이도</span>
+                  <span class="info-value" id="detail-difficulty"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 시뮬레이터 -->
+          <div class="simulator-section">
+            <h2>시뮬레이터</h2>
+            <div class="simulator-container">
+              <iframe
+                id="simulator-iframe"
+                class="simulator-iframe"
+                title="게임 시뮬레이터"
+                allowfullscreen
+              >
+              </iframe>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

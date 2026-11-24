@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>숫자 맞추기 — UP &amp; DOWN</title>
+<style>
+  :root { --accent: #e2564a; --ink: #232a38; --sub: #4a5468; --line: #e3e8ef; --bg: #f7f8fb; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Pretendard", "Pretendard Variable", -apple-system, "Malgun Gothic", sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.6; }
+  .hero { background: linear-gradient(135deg, #2b3242, #42313a); color: #fff; padding: 34px 20px 30px; text-align: center; }
+  .hero .tag { display: inline-block; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.1em;
+    background: #ffffff22; border: 1px solid #ffffff44; border-radius: 999px; padding: 4px 12px; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.3rem, 4vw, 1.8rem); font-weight: 900; }
+  .hero p { max-width: 560px; margin: 10px auto 0; font-size: 0.9rem; color: #d9dde6; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 22px 16px 56px; }
+
+  .term { background: #10151f; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(20,26,40,.25); }
+  .tbar { display: flex; align-items: center; gap: 7px; background: #1c2330; padding: 10px 14px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
+  .fname { margin-left: 8px; font-size: 0.78rem; color: #8b96aa; font-weight: 700;
+    font-family: Consolas, "Courier New", monospace; }
+  #rerun { margin-left: auto; background: #2a3344; color: #cdd7e8; border: none; border-radius: 7px;
+    padding: 5px 11px; font-size: 0.76rem; font-weight: 800; cursor: pointer; font-family: inherit; }
+  #rerun:hover { background: #38445c; }
+  .tbody { padding: 16px 16px 8px; min-height: 240px; max-height: 340px; overflow-y: auto;
+    font-family: Consolas, "Courier New", monospace; font-size: 0.86rem; color: #d7e3f4; }
+  .tbody .ln { margin-bottom: 4px; white-space: pre-wrap; word-break: break-all; }
+  .tbody .sys { color: #8b96aa; }
+  .tbody .in { color: #ffd479; }
+  .tbody .up { color: #5fd38a; font-weight: 700; }
+  .tbody .down { color: #6db3ff; font-weight: 700; }
+  .tbody .win { color: #ff8d84; font-weight: 800; }
+  .tin { display: flex; align-items: center; gap: 8px; padding: 10px 16px 14px;
+    font-family: Consolas, "Courier New", monospace; }
+  .tin .pr { color: #5fd38a; font-size: 0.86rem; font-weight: 700; white-space: nowrap; }
+  #inp { flex: 1; min-width: 0; background: #1c2330; border: 1px solid #323d52; border-radius: 8px;
+    color: #fff; font-family: inherit; font-size: 0.95rem; padding: 8px 12px; outline: none; }
+  #inp:focus { border-color: #e2564a; }
+  #go { background: var(--accent); color: #fff; border: none; border-radius: 8px; padding: 8px 16px;
+    font-weight: 800; font-size: 0.85rem; cursor: pointer; font-family: inherit; }
+  #go:disabled, #inp:disabled { opacity: 0.45; cursor: default; }
+
+  .codesec { margin-top: 34px; }
+  .codesec h2 { font-size: 1.1rem; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+  .codesec .lead { color: var(--sub); font-size: 0.86rem; margin-top: 6px; }
+  pre { margin-top: 14px; background: #232a38; color: #e8edf6; border-radius: 12px; padding: 18px;
+    font-family: Consolas, "Courier New", monospace; font-size: 0.82rem; line-height: 1.7; overflow-x: auto; }
+  pre .k { color: #c792ea; } pre .f { color: #82aaff; } pre .s { color: #c3e88d; } pre .n { color: #f78c6c; } pre .c { color: #7a8699; }
+  .pts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  @media (max-width: 640px) { .pts { grid-template-columns: 1fr; } }
+  .pt { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--accent);
+    border-radius: 11px; padding: 13px 15px; }
+  .pt b { font-size: 0.86rem; display: block; margin-bottom: 4px; }
+  .pt p { font-size: 0.79rem; color: var(--sub); }
+  .pt code { background: #f2f4f8; border-radius: 5px; padding: 1px 6px; font-size: 0.76rem; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <p class="tag">코드설계소 · 파이썬 첫 프로젝트</p>
+  <h1>🔢 숫자 맞추기 — UP &amp; DOWN</h1>
+  <p>컴퓨터가 고른 1~100 사이의 숫자를 추리해 보세요.<br>
+UP·DOWN 힌트를 보고 범위를 좁히면 몇 번 만에 맞힐 수 있을까요?</p>
+</div>
+
+<div class="wrap">
+  <div class="term">
+    <div class="tbar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="fname">updown.py — Python 3</span>
+      <button id="rerun">↻ 다시 실행</button>
+    </div>
+    <div class="tbody" id="out"></div>
+    <div class="tin">
+      <span class="pr">숫자 입력:</span>
+      <input id="inp" type="number" min="1" max="100" inputmode="numeric" autocomplete="off">
+      <button id="go">Enter</button>
+    </div>
+  </div>
+
+  <section class="codesec">
+    <h2>💻 학생이 작성한 파이썬 코드</h2>
+    <p class="lead">위 실행 화면은 아래 파이썬 코드를 웹 콘솔로 그대로 옮긴 것입니다.</p>
+    <pre><span class="k">import</span> random
+
+answer = random.<span class="f">randint</span>(<span class="n">1</span>, <span class="n">100</span>)   <span class="c"># 컴퓨터가 숫자를 고른다</span>
+count = <span class="n">0</span>
+
+<span class="f">print</span>(<span class="s">"1부터 100 사이의 숫자를 맞혀 보세요!"</span>)
+
+<span class="k">while</span> <span class="k">True</span>:
+    guess = <span class="f">int</span>(<span class="f">input</span>(<span class="s">"숫자 입력: "</span>))
+    count = count + <span class="n">1</span>
+    <span class="k">if</span> guess &lt; answer:
+        <span class="f">print</span>(<span class="s">"UP!"</span>)
+    <span class="k">elif</span> guess &gt; answer:
+        <span class="f">print</span>(<span class="s">"DOWN!"</span>)
+    <span class="k">else</span>:
+        <span class="f">print</span>(<span class="s">f"정답! {count}번 만에 맞혔어요!"</span>)
+        <span class="k">break</span></pre>
+    <div class="pts">
+      <div class="pt"><b>🎲 random.randint</b><p>컴퓨터가 1~100 사이의 숫자를 무작위로 하나 고릅니다.<br>실행할 때마다 정답이 달라집니다.</p></div>
+      <div class="pt"><b>🔁 while True + break</b><p>정답을 맞힐 때까지 계속 반복하다가, 맞히는 순간 <code>break</code>로 빠져나옵니다.</p></div>
+      <div class="pt"><b>🔀 if / elif / else</b><p>입력한 수와 정답을 비교해 UP, DOWN, 정답 세 갈래로 나뉩니다.</p></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var out = document.getElementById("out");
+  var inp = document.getElementById("inp");
+  var go = document.getElementById("go");
+  var rerun = document.getElementById("rerun");
+  var answer = 0, count = 0, done = false;
+
+  function print(text, cls) {
+    var d = document.createElement("div");
+    d.className = "ln" + (cls ? " " + cls : "");
+    d.textContent = text;
+    out.appendChild(d);
+    out.scrollTop = out.scrollHeight;
+  }
+
+  function run() {
+    out.innerHTML = "";
+    answer = Math.floor(Math.random() * 100) + 1;
+    count = 0; done = false;
+    inp.disabled = false; go.disabled = false;
+    print("$ python updown.py", "sys");
+    print("1부터 100 사이의 숫자를 맞혀 보세요!");
+    inp.value = "";
+    inp.focus();
+  }
+
+  function submit() {
+    if (done) return;
+    var v = parseInt(inp.value, 10);
+    if (isNaN(v) || v < 1 || v > 100) {
+      print("숫자 입력: " + inp.value, "in");
+      print("1부터 100 사이의 숫자를 입력해 주세요!", "sys");
+      inp.value = ""; inp.focus();
+      return;
+    }
+    print("숫자 입력: " + v, "in");
+    count++;
+    if (v < answer) {
+      print("UP! ⬆", "up");
+    } else if (v > answer) {
+      print("DOWN! ⬇", "down");
+    } else {
+      done = true;
+      var msg = "🎉 정답! " + count + "번 만에 맞혔어요!";
+      if (count <= 7) msg += "  (이진 탐색의 재능이 보여요!)";
+      print(msg, "win");
+      print("↻ 다시 실행을 누르면 새 문제가 시작됩니다.", "sys");
+      inp.disabled = true; go.disabled = true;
+    }
+    inp.value = ""; inp.focus();
+  }
+
+  go.addEventListener("click", submit);
+  inp.addEventListener("keydown", function (e) { if (e.key === "Enter") submit(); });
+  rerun.addEventListener("click", run);
+  run();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,306 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>급식판 검사기</title>
+<style>
+  :root {
+    --teal: #2ca8a2;
+    --teal-dark: #1e7d78;
+    --ink: #17203a;
+    --ink-soft: #4a5570;
+    --paper: #f6f7f9;
+    --line: #d9dde6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.65;
+    word-break: keep-all;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px 56px; }
+
+  /* ---------- 헤더 ---------- */
+  .hero {
+    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+    color: #fff;
+    padding: 44px 20px 38px;
+    text-align: center;
+  }
+  .hero .tag { font-size: 0.82rem; font-weight: 700; opacity: 0.85; letter-spacing: 0.08em; }
+  .hero h1 { font-size: clamp(1.9rem, 5vw, 2.6rem); font-weight: 900; margin: 6px 0 10px; }
+  .hero p { opacity: 0.94; max-width: 36em; margin: 0 auto; }
+
+  section { margin-top: 44px; }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 900;
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+    border-bottom: 2px solid var(--teal);
+  }
+  h2 .no { color: var(--teal); margin-right: 6px; }
+
+  /* ---------- 개요 3카드 ---------- */
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .trio .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 16px;
+  }
+  .trio .emoji { font-size: 1.6rem; }
+  .trio h3 { font-size: 0.95rem; font-weight: 800; margin: 8px 0 6px; color: var(--teal-dark); }
+  .trio p { font-size: 0.92rem; color: var(--ink-soft); }
+  @media (max-width: 640px) { .trio { grid-template-columns: 1fr; } }
+
+  /* ---------- 시스템 구성 플로우 ---------- */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .flow .node {
+    flex: 1;
+    min-width: 118px;
+    background: #fff;
+    border: 1.5px solid var(--teal);
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .flow .node .ic { font-size: 1.5rem; }
+  .flow .node b { display: block; font-size: 0.92rem; margin-top: 6px; }
+  .flow .node span { display: block; font-size: 0.78rem; color: var(--ink-soft); margin-top: 3px; }
+  .flow .arrow { align-self: center; color: var(--teal); font-weight: 900; font-size: 1.2rem; }
+  @media (max-width: 720px) {
+    .flow { flex-direction: column; }
+    .flow .arrow { transform: rotate(90deg); margin: -2px auto; }
+  }
+
+  /* ---------- AI 모델 현황 ---------- */
+  .model-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; }
+  @media (max-width: 720px) { .model-grid { grid-template-columns: 1fr; } }
+  .stat-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .stat .v { font-size: 1.3rem; font-weight: 900; color: var(--teal-dark); }
+  .stat .l { font-size: 0.78rem; color: var(--ink-soft); font-weight: 700; margin-top: 2px; }
+  .bars { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .bars h3 { font-size: 0.9rem; font-weight: 800; margin-bottom: 12px; }
+  .bar-row { margin-bottom: 12px; }
+  .bar-row .name { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 5px; }
+  .bar-row .name em { font-style: normal; color: var(--ink-soft); font-weight: 600; }
+  .bar-track { height: 14px; background: #edf0f5; border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; }
+  .note { font-size: 0.8rem; color: var(--ink-soft); margin-top: 8px; }
+
+  /* ---------- 블록 코드 ---------- */
+  .code-note { font-size: 0.88rem; color: var(--ink-soft); margin-bottom: 14px; }
+  .script {
+    background: #eef3fb;
+    border: 1px solid #d7e2f2;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+  }
+  .script h3 { font-size: 0.85rem; font-weight: 800; color: var(--ink-soft); margin-bottom: 10px; }
+  .blk {
+    display: block;
+    width: fit-content;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #fff;
+    border-radius: 8px;
+    padding: 7px 13px;
+    margin-top: 5px;
+    white-space: nowrap;
+  }
+  .blk .chip {
+    background: rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+    padding: 1px 8px;
+    margin: 0 2px;
+    font-weight: 800;
+  }
+  .b-start { background: #f5a623; }
+  .b-loop, .b-if { background: #e8730c; }
+  .b-ai { background: #a06ee0; }
+  .b-dev { background: #2f7de0; }
+  .b-wait { background: #e8730c; }
+  .ind1 { margin-left: 26px; }
+  .ind2 { margin-left: 52px; }
+
+  /* ---------- 영상 ---------- */
+  .video-box { background: #10131c; border-radius: 14px; overflow: hidden; }
+  .video-box video { width: 100%; display: block; }
+  .privacy-note {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    margin-top: 8px;
+  }
+
+  /* ---------- 제작 이야기 ---------- */
+  .story { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 720px) { .story { grid-template-columns: 1fr; } }
+  .story .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .story h3 { font-size: 0.95rem; font-weight: 800; color: var(--teal-dark); margin-bottom: 8px; }
+  .story p, .story li { font-size: 0.9rem; color: var(--ink-soft); }
+  .story ol { padding-left: 20px; }
+  .story li { margin-bottom: 4px; }
+
+  footer {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    margin-top: 48px;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <p class="tag">피지컬 컴퓨팅 프로젝트 · 학교에 필요한 시스템 만들기</p>
+  <h1>🍽️ 급식판 검사기</h1>
+  <p>급식판을 카메라에 비추면 AI가 잔반이 있는지 검사해, 다 비웠으면 상점과 신나는 노래를, 남겼으면 벌점을 주는 잔반 줄이기 시스템입니다.</p>
+</div>
+
+<div class="wrap">
+
+  <section>
+    <h2><span class="no">01</span>왜 만들었나요?</h2>
+    <div class="trio">
+      <div class="card">
+        <div class="emoji">🍚</div>
+        <h3>문제 발견</h3>
+        <p>급식 잔반이 많아지면 처리 비용이 늘어나고, 그만큼 급식의 질이 떨어져요.</p>
+      </div>
+      <div class="card">
+        <div class="emoji">💡</div>
+        <h3>해결 아이디어</h3>
+        <p>급식판을 카메라로 검사해서 다 비우면 상점, 남기면 벌점을 주자!<br>
+상점을 받으려고 잔반을 남기지 않게 될 거예요.</p>
+      </div>
+      <div class="card">
+        <div class="emoji">🌱</div>
+        <h3>기대 효과</h3>
+        <p>잔반이 줄면 처리 비용이 감소하고, 아낀 비용만큼 급식의 질이 좋아집니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="no">02</span>시스템 구성</h2>
+    <div class="flow">
+      <div class="node"><div class="ic">⌨️</div><b>스페이스바</b><span>검사 실행</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="ic">📷</div><b>카메라</b><span>급식판 촬영</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="ic">🧠</div><b>AI 모델</b><span>잔반 유무 판별</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="ic">💬</div><b>마이크로비트</b><span>Yes · No + 노래</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="ic">🏅</div><b>상·벌점 UI</b><span>점수 누적 표시</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="no">03</span>AI 모델 현황</h2>
+    <div class="model-grid">
+      <div class="stat-cards">
+        <div class="stat"><div class="v">MobileNet</div><div class="l">기반 모델</div></div>
+        <div class="stat"><div class="v">2개</div><div class="l">분류 클래스</div></div>
+        <div class="stat"><div class="v">243장</div><div class="l">총 학습 사진</div></div>
+        <div class="stat"><div class="v">3종</div><div class="l">테스트 모두 성공</div></div>
+      </div>
+      <div class="bars">
+        <h3>클래스별 학습 데이터</h3>
+        <div class="bar-row">
+          <div class="name">✨ 잔반 없음 <em>121장</em></div>
+          <div class="bar-track"><div class="bar-fill" style="width: 99%; background: #2ca8a2;"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="name">🍚 잔반 있음 <em>122장</em></div>
+          <div class="bar-track"><div class="bar-fill" style="width: 100%; background: #e8971e;"></div></div>
+        </div>
+        <p class="note">두 클래스를 거의 정확히 반반으로 맞춘 균형 잡힌 학습 데이터입니다.<br>
+사진이 부족해 분류가 흔들리던 문제도 사진을 추가해 해결했고, 분류·LED·UI 세 가지 테스트에 모두 성공했습니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="no">04</span>핵심 코드</h2>
+    <p class="code-note">AI이거다 블록 코딩으로 작성한 실제 프로그램을 그대로 옮긴 것입니다.<br>
+스페이스바 한 번으로 검사가 실행되고, 결과에 따라 상점·벌점이 쌓이며 마이크로비트가 표정과 노래로 반응합니다.</p>
+    <div class="script">
+      <h3>메인 프로그램 — 급식판 검사와 상벌점</h3>
+      <span class="blk b-start">🚩 프로그램이 실행될 때</span>
+      <span class="blk b-dev">변수 <span class="chip">상점</span> = <span class="chip">0</span>, 변수 <span class="chip">벌점</span> = <span class="chip">0</span></span>
+      <span class="blk b-loop">계속 반복하기</span>
+      <span class="blk b-dev ind1">상점·벌점 텍스트를 변수 값으로 갱신하기</span>
+      <span class="blk b-start">⌨️ 키보드의 <span class="chip">Space</span> 키가 눌렸을 때</span>
+      <span class="blk b-ai ind1">AI 모델의 분류 결과 요청하기</span>
+      <span class="blk b-if ind1">만약 분류 결과가 클래스 <span class="chip">잔반없음</span> 인가? 라면</span>
+      <span class="blk b-dev ind2">상점 <span class="chip">+1</span> + 화면에 <span class="chip">Yes</span> + 소리 <span class="chip">HAPPY</span> 재생</span>
+      <span class="blk b-if ind1">아니면 (잔반이 있다면)</span>
+      <span class="blk b-dev ind2">벌점 <span class="chip">+1</span> + 화면에 <span class="chip">No</span> + 소리 <span class="chip">SAD</span> 재생</span>
+    </div>
+
+  </section>
+
+  <section>
+    <h2><span class="no">05</span>동작 영상</h2>
+    <div class="video-box">
+      <video controls muted playsinline preload="none" poster="poster.jpg">
+        <source src="demo.mp4" type="video/mp4">
+      </video>
+    </div>
+    <p class="privacy-note">※ 개인정보 보호를 위해 소리를 제거하고 일부 구간만 담은 영상입니다.</p>
+  </section>
+
+  <section>
+    <h2><span class="no">06</span>제작 이야기</h2>
+    <div class="story">
+      <div class="card">
+        <h3>🗓 8차시의 기록</h3>
+        <ol>
+          <li>아이디어 구상과 구체화 (1~2차시)</li>
+          <li>AI 학습과 코딩 (3~4차시)</li>
+          <li>발표 자료 제작과 검사 (5~7차시)</li>
+          <li>제출 (8차시)</li>
+        </ol>
+      </div>
+      <div class="card">
+        <h3>🔧 부딪히고, 해결하고</h3>
+        <p>사진 수가 부족해 AI가 분류를 제대로 못했지만, 사진을 더 추가해 해결했습니다.</p>
+        <h3 style="margin-top: 14px;">💬 팀원들의 한 마디</h3>
+        <p>"AI 학습을 많이 시켜야 잘 분류할 수 있다는 걸 알게 됐다", "AI가 생각보다 필요한 자료 양이 많다는 걸 깨달았다", 그리고 — "우리 주제가 잔반 남기지 않기이기 때문에, 앞으로 급식을 남기지 않겠다!"</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>삼선중학교 AI 중점학교 · 피지컬 컴퓨팅 프로젝트</footer>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,613 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 통합 제어 시뮬레이터</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Pretendard', -apple-system, sans-serif; background: #0b1020; color: #e2e8f0; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 18px 14px 40px; }
+
+  /* 콘솔(챗봇) 영역 */
+  .console { background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden; }
+  .console-head { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: #111c33; border-bottom: 1px solid #1e293b; font-size: 13px; color: #94a3b8; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .chat-log { padding: 14px; min-height: 90px; max-height: 220px; overflow-y: auto; font-size: 14px; line-height: 1.7; }
+  .chat-log .u { color: #7dd3fc; }
+  .chat-log .a { color: #86efac; }
+  .chat-input { display: flex; gap: 8px; padding: 12px 14px; border-top: 1px solid #1e293b; }
+  .chat-input input { flex: 1; background: #0b1224; border: 1px solid #263450; border-radius: 8px; color: #e2e8f0; padding: 10px 12px; font-size: 14px; }
+  .chat-input button { background: #0284c7; color: #fff; border: 0; border-radius: 8px; padding: 10px 18px; font-weight: 700; cursor: pointer; }
+  .chat-input button:hover { background: #0369a1; }
+  .quick { display: flex; flex-wrap: wrap; gap: 8px; padding: 0 14px 14px; }
+  .quick button { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; border-radius: 999px; padding: 6px 14px; font-size: 12.5px; font-weight: 600; cursor: pointer; }
+  .quick button:hover { background: #334155; color: #fff; }
+
+  /* 모듈 영역 */
+  .module { display: none; margin-top: 18px; animation: rise .4s ease; }
+  .module.active { display: block; }
+  @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+  /* 지진 모듈 */
+  .quake-box { background: #fff; color: #1a202c; border-radius: 12px; padding: 20px; }
+  .quake-box h3 { margin: 0 0 14px; text-align: center; font-size: 18px; }
+  .quake-box canvas { width: 100%; height: auto; border: 1px solid #e2e8f0; border-radius: 8px; background: #fcfcfd; }
+  .quake-form { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; align-items: end; background: #f8fafc; border: 1px solid #eef2f7; padding: 12px; border-radius: 10px; }
+  .quake-form label { font-size: 12.5px; color: #475569; font-weight: 700; display: block; margin-bottom: 4px; }
+  .quake-form input { width: 150px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; }
+  .quake-form button { background: #2563eb; color: #fff; border: 0; border-radius: 8px; padding: 10px 18px; font-weight: 700; cursor: pointer; }
+  #quakeResult { margin-top: 12px; font-size: 15px; font-weight: 800; text-align: center; min-height: 22px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ===================== 챗봇 콘솔 ===================== -->
+  <div class="console">
+    <div class="console-head">
+      <span class="dot" style="background:#f87171"></span>
+      <span class="dot" style="background:#fbbf24"></span>
+      <span class="dot" style="background:#34d399"></span>
+      &nbsp;AI 통합 제어 시스템 — 키워드를 입력하면 해당 시뮬레이터가 가동됩니다
+    </div>
+    <div class="chat-log" id="chatLog">
+      <div class="a">AI 🤖: 무엇을 도와드릴까요? 아래 버튼을 누르거나 키워드를 입력해 보세요.</div>
+    </div>
+    <div class="chat-input">
+      <input id="chatInput" placeholder="예: 지진, 다이오드, 에너지 띠, 반도체 제조..." onkeydown="if(event.key==='Enter') sendMsg()">
+      <button onclick="sendMsg()">전송</button>
+    </div>
+    <div class="quick">
+      <button onclick="quickMsg('지진 분석 보여줘')">🌋 지진 분석</button>
+      <button onclick="quickMsg('다이오드 시뮬레이션')">🔬 PN 다이오드</button>
+      <button onclick="quickMsg('에너지 띠 구조')">⚡ 에너지 띠</button>
+      <button onclick="quickMsg('반도체 제조 타이쿤')">🏭 수율 타이쿤</button>
+    </div>
+  </div>
+
+  <!-- ===================== 모듈 1: 지진 분석 ===================== -->
+  <div class="module" id="mod-quake">
+    <div class="quake-box">
+      <h3>🌋 대한민국 지진 발생 추이 (1978–2025, 기상청 통계)</h3>
+      <canvas id="quakeChart" width="800" height="320"></canvas>
+      <div class="quake-form">
+        <div><label>규모 3.0 이상 예측 횟수</label><input type="number" id="inMag" value="10"></div>
+        <div><label>총 지진 예측 횟수 (규모 2.0 이상)</label><input type="number" id="inTotal" value="60"></div>
+        <button onclick="predictQuake()">AI 판정 실행</button>
+        <div id="quakeResult"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 모듈 2: PN 접합 다이오드 ===================== -->
+  <div class="module" id="mod-diode">
+    <div class="scoped-sim-box" style="font-family: sans-serif; max-width: 820px; margin: auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 12px; background: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); color:#1a202c;">
+    <h3 style="margin-top: 0; color: #2c3e50; text-align: center; font-size: 18px; margin-bottom: 20px;">PN Junction Diode Simulator (Recombination Model)</h3>
+    <div style="margin-bottom: 20px; display: flex; gap: 30px; justify-content: center; background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #f1f3f5; flex-wrap: wrap;">
+    <div>
+    <label style="font-weight: bold; font-size: 14px; color: #495057;">전압 조절 (Bias Voltage): <span id="vVal" style="color: #d63031; font-family: monospace; font-size: 16px;">0.00</span> V</label><br>
+    <input type="range" id="vSlider" min="-3.0" max="1.1" step="0.05" value="0.0" style="width: 280px; margin-top: 8px; cursor: pointer;">
+    </div>
+    <div style="align-self: center; font-size: 15px; font-weight: bold; color: #343a40;">흐르는 전류 (Current): <span id="iVal" style="color: #0984e3; font-family: monospace; font-size: 18px;">0.00</span> mA</div>
+    </div>
+    <canvas id="simCanvas" width="720" height="300" style="border: 1px solid #e9ecef; display: block; margin: 0 auto; background: #fcfcfc; border-radius: 6px; width:100%; height:auto;"></canvas>
+    </div>
+  </div>
+
+  <!-- ===================== 모듈 3: 에너지 띠 ===================== -->
+  <div class="module" id="mod-band">
+    <div class="scoped-sim-box" style="font-family: sans-serif; max-width: 820px; margin: auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 16px; background: #fff; box-shadow: 0 4px 12px rgba(0,0,0,0.05); color:#1a202c;">
+    <h3 style="margin-top: 0; color: #0f172a; text-align: center; font-size: 18px; margin-bottom: 15px; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">🔬 에너지 띠 및 자동차(전자) 이동 시뮬레이터</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; background: #f1f5f9; padding: 12px; border-radius: 12px;">
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+    <label style="font-weight: 600; font-size: 13px; color: #475569;">물질 종류 선택</label>
+    <div style="display: flex; gap: 6px;">
+    <button style="flex: 1; padding: 6px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;" id="btn-conductor">도체</button>
+    <button style="flex: 1; padding: 6px; border: 1px solid #cbd5e1; background: #2563eb; color: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;" id="btn-semiconductor">반도체</button>
+    <button style="flex: 1; padding: 6px; border: 1px solid #cbd5e1; background: #fff; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 12px;" id="btn-insulator">부도체</button>
+    </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px;">
+    <label id="temp-label" style="font-weight: 600; font-size: 13px; color: #475569;">온도 / 에너지 공급: 0 K</label>
+    <input type="range" id="temp-slider" min="0" max="600" value="0" style="width: 100%; cursor: pointer;">
+    </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 15px; text-align: center; font-size: 12px;">
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px;"><div style="color: #64748b;">물질</div><div id="m-type" style="font-weight: 700; margin-top: 2px;">반도체</div></div>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px;"><div style="color: #64748b;">전도대 전자</div><div id="m-electrons" style="font-weight: 700; margin-top: 2px;">0 개</div></div>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px;"><div style="color: #64748b;">가전자대 양공</div><div id="m-holes" style="font-weight: 700; margin-top: 2px;">0 개</div></div>
+    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px; border-radius: 8px;"><div style="color: #64748b;">전기전도도</div><div id="m-conductivity" style="font-weight: 700; color: #2563eb; margin-top: 2px;">0 %</div></div>
+    </div>
+    <canvas id="bandCanvas" width="740" height="460" style="border: 1px solid #e2e8f0; border-radius: 8px; background: #fafafa; width: 100%; height: auto;"></canvas>
+    </div>
+  </div>
+
+  <!-- ===================== 모듈 4: 반도체 수율 타이쿤 ===================== -->
+  <div class="module" id="mod-tycoon">
+<div class="tycoon-isolate" style="width: 100%; max-width: 1000px; margin: 0 auto;">
+<style>
+.tycoon-isolate * { box-sizing: border-box; margin: 0; padding: 0; }
+.tycoon-isolate .container { width: 100%; background: #1e293b; border-radius: 16px; border: 1px solid #334155; padding: 25px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); color: #f1f5f9; font-family: sans-serif; }
+.tycoon-isolate header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #334155; padding-bottom: 15px; }
+.tycoon-isolate header h1 { color: #38bdf8; font-size: 22px; margin-bottom: 5px; }
+.tycoon-isolate header p { color: #94a3b8; font-size: 14px; }
+.tycoon-isolate .dashboard { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px; }
+.tycoon-isolate .stat-card { background: #0f172a; padding: 15px; border-radius: 10px; border: 1px solid #334155; text-align: center; }
+.tycoon-isolate .stat-card h3 { font-size: 12px; color: #94a3b8; text-transform: uppercase; margin-bottom: 5px; }
+.tycoon-isolate .stat-card p { font-size: 20px; font-weight: bold; color: #34d399; }
+.tycoon-isolate .main-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; }
+.tycoon-isolate .canvas-area { background: #020617; border-radius: 12px; border: 2px solid #334155; overflow: hidden; position: relative; }
+.tycoon-isolate canvas { display: block; width: 100%; height: auto; background: #020617; }
+.tycoon-isolate .sidebar { display: flex; flex-direction: column; gap: 15px; }
+.tycoon-isolate .panel { background: #111827; padding: 15px; border-radius: 10px; border: 1px solid #334155; }
+.tycoon-isolate .panel h2 { font-size: 16px; color: #38bdf8; margin-bottom: 10px; border-bottom: 1px solid #334155; padding-bottom: 5px; }
+.tycoon-isolate .control-group { margin-bottom: 12px; }
+.tycoon-isolate .control-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
+.tycoon-isolate .control-group input[type="range"] { width: 100%; accent-color: #38bdf8; }
+.tycoon-isolate .control-group .val-display { float: right; color: #38bdf8; font-weight: bold; }
+.tycoon-isolate .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: all 0.2s; margin-top: 5px; }
+.tycoon-isolate .btn-primary { background: #0284c7; color: white; }
+.tycoon-isolate .btn-primary:hover { background: #0369a1; }
+.tycoon-isolate .btn-upgrade { background: #d97706; color: white; font-size: 12px; padding: 8px; margin-top: 8px; }
+.tycoon-isolate .btn-upgrade:hover { background: #b45309; }
+.tycoon-isolate .btn:disabled { background: #4b5563; color: #9ca3af; cursor: not-allowed; }
+.tycoon-isolate .log-box { background: #020617; border: 1px solid #334155; border-radius: 6px; padding: 10px; font-family: monospace; font-size: 12px; color: #34d399; height: 120px; overflow-y: auto; line-height: 1.5; }
+.tycoon-isolate .tabs { display: flex; gap: 5px; margin-bottom: 10px; }
+.tycoon-isolate .tab-btn { flex: 1; padding: 8px; background: #334155; border: none; color: #94a3b8; font-weight: bold; font-size: 13px; cursor: pointer; border-radius: 6px 6px 0 0; }
+.tycoon-isolate .tab-btn.active { background: #0284c7; color: white; }
+@media (max-width: 720px) { .tycoon-isolate .main-layout, .tycoon-isolate .dashboard { grid-template-columns: 1fr 1fr; } }
+</style>
+
+<div class="container">
+<header>
+<h1>🏭 반도체 수율 공학 시뮬레이터 (Semiconductor Yield Tycoon)</h1>
+<p>실제 공정 변수(파장, 정렬, 파티클)가 수율과 회사 자산에 미치는 영향을 제어하는 시뮬레이터입니다.</p>
+</header>
+
+<div class="dashboard">
+<div class="stat-card"><h3>보유 자산 (Budget)</h3><p id="txt-budget">$10,000</p></div>
+<div class="stat-card"><h3>클린룸 등급 (Cleanroom)</h3><p id="txt-clean">Class 100</p></div>
+<div class="stat-card"><h3>최근 공정 수율 (Yield)</h3><p id="txt-yield">0%</p></div>
+<div class="stat-card"><h3>누적 생산 칩 (Total Chips)</h3><p id="txt-chips">0 EA</p></div>
+</div>
+
+<div class="main-layout">
+<div class="canvas-area">
+<div class="tabs">
+<button class="tab-btn active" id="tab-euv" onclick="changeStage('euv')">EUV 노광 룸</button>
+<button class="tab-btn" id="tab-pkg" onclick="changeStage('pkg')">HBM 패키징 룸</button>
+</div>
+<canvas id="mainCanvas" width="600" height="360"></canvas>
+</div>
+
+<div class="sidebar">
+<div class="panel" id="panel-controls">
+<h2>공정 매개변수 설정</h2>
+<div id="controls-euv">
+<div class="control-group">
+<label>EUV 레이저 파장 (Wavelength) <span class="val-display" id="lbl-wave">13.0 nm</span></label>
+<input type="range" id="rng-wave" min="5" max="40" value="13" step="0.5" oninput="updateParams()">
+</div>
+<div class="control-group">
+<label>초점 정밀도 (Lens Focus) <span class="val-display" id="lbl-focus">95%</span></label>
+<input type="range" id="rng-focus" min="70" max="100" value="95" oninput="updateParams()">
+</div>
+<button class="btn btn-primary" id="btn-run-euv" onclick="startEUV()">EUV 노광 웨이퍼 가공 (-$1,000)</button>
+<button class="btn btn-upgrade" onclick="upgradeCleanroom()">클린룸 필터 업그레이드 (-$3,000)</button>
+</div>
+
+<div id="controls-pkg" style="display:none;">
+<div class="control-group">
+<label>적층 정렬 오차 (Alignment) <span class="val-display" id="lbl-align">±1.0 ㎛</span></label>
+<input type="range" id="rng-align" min="0" max="5" value="1" step="0.1" oninput="updateParams()">
+</div>
+<div class="control-group">
+<label>TSV 압착 압력 (Pressure) <span class="val-display" id="lbl-press">80%</span></label>
+<input type="range" id="rng-press" min="50" max="120" value="80" oninput="updateParams()">
+</div>
+<button class="btn btn-primary" id="btn-run-pkg" onclick="startPackaging()" disabled style="background: #4b5563; color: #9ca3af;">HBM 수직 적층 공정 (-$1,500)</button>
+</div>
+</div>
+
+<div class="panel">
+<h2>공정 모니터링 로그</h2>
+<div class="log-box" id="log-box">
+[시스템] 공장 가동 준비 완료.<br>
+[가이드] EUV 노광 룸에서 매개변수를 최적화한 후 가공을 시작하세요.
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+  </div>
+
+<script>
+/* ==================== 챗봇 라우팅 (원본 파이썬 로직 이식) ==================== */
+const log = document.getElementById("chatLog");
+function addChat(cls, text) {
+  const d = document.createElement("div");
+  d.className = cls;
+  d.textContent = text;
+  log.appendChild(d);
+  log.scrollTop = log.scrollHeight;
+}
+function showModule(id) {
+  document.querySelectorAll(".module").forEach(m => m.classList.remove("active"));
+  const m = document.getElementById(id);
+  if (m) { m.classList.add("active"); m.scrollIntoView({ behavior: "smooth", block: "start" }); }
+}
+function routeMessage(msg) {
+  const s = msg.toLowerCase();
+  const has = (words) => words.some(w => s.includes(w));
+
+  const isEarthquake = has(["지진", "지각", "earthquake", "기상청"]);
+  const isEnergyBand = has(["에너지", "구조", "밴드", "띠", "energy", "band"]);
+  const isDiode = has(["다이오드", "디오", "접합", "diode", "junction"]) &&
+                  !has(["제조", "공정", "게임", "타이쿤", "수율"]);
+  const isTycoon = has(["제조", "공정", "게임", "타이쿤", "수율", "tycoon", "8대", "euv", "hbm", "적층"]) ||
+                   (s.includes("반도체") && !(isEnergyBand || isDiode));
+
+  if (isEarthquake) { addChat("a", "AI 🤖: 지진 데이터 분석 결과를 출력합니다."); showModule("mod-quake"); drawQuakeChart(); }
+  else if (isEnergyBand) { addChat("a", "AI 🤖: 전자 에너지 띠 시뮬레이터를 가동합니다."); showModule("mod-band"); }
+  else if (isDiode) { addChat("a", "AI 🤖: PN 접합 다이오드 거동 시뮬레이션을 가동합니다."); showModule("mod-diode"); }
+  else if (isTycoon) { addChat("a", "AI 🤖: 반도체 제조 수율 타이쿤 시뮬레이션을 가동합니다."); showModule("mod-tycoon"); }
+  else { addChat("a", "AI 🤖: 관련 모듈을 찾지 못했습니다. '다이오드', '에너지 띠', '제조' 등의 키워드를 포함해 주세요!"); }
+}
+function sendMsg() {
+  const input = document.getElementById("chatInput");
+  const msg = input.value.trim();
+  if (!msg) return;
+  addChat("u", "User 🧑: " + msg);
+  input.value = "";
+  routeMessage(msg);
+}
+function quickMsg(msg) {
+  addChat("u", "User 🧑: " + msg);
+  routeMessage(msg);
+}
+
+/* ==================== 모듈 1: 지진 분석 ==================== */
+const QUAKE = [
+[1978,5,5,6],[1979,17,8,22],[1980,6,1,16],[1981,10,3,15],[1982,11,8,13],[1983,10,4,20],
+[1984,7,2,19],[1985,11,6,26],[1986,12,9,15],[1987,4,5,11],[1988,4,1,6],[1989,13,4,16],
+[1990,3,4,15],[1991,7,8,19],[1992,7,5,15],[1993,7,4,22],[1994,11,8,24],[1995,11,8,29],
+[1996,14,13,39],[1997,8,8,21],[1998,7,9,32],[1999,16,22,37],[2000,8,5,29],[2001,7,6,41],
+[2002,11,9,49],[2003,9,12,38],[2004,6,10,42],[2005,15,6,37],[2006,7,7,50],[2007,2,5,42],
+[2008,10,7,46],[2009,10,10,60],[2010,5,5,42],[2011,14,7,52],[2012,9,4,56],[2013,18,15,93],
+[2014,8,11,49],[2015,5,7,44],[2016,34,55,252],[2017,19,98,223],[2018,5,33,115],[2019,14,16,88],
+[2020,5,17,68],[2021,5,15,70],[2022,8,13,77],[2023,16,19,106],[2024,7,11,87],[2025,4,16,79]];
+
+let quakeDrawn = false;
+function drawQuakeChart() {
+  if (quakeDrawn) return;
+  quakeDrawn = true;
+  const cv = document.getElementById("quakeChart"), ctx = cv.getContext("2d");
+  const W = cv.width, H = cv.height, padL = 46, padR = 16, padT = 24, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const maxV = 260;
+  const x = (i) => padL + (i / (QUAKE.length - 1)) * plotW;
+  const y = (v) => padT + plotH - (v / maxV) * plotH;
+
+  ctx.fillStyle = "#fcfcfd"; ctx.fillRect(0, 0, W, H);
+  // 격자 + y축 라벨
+  ctx.strokeStyle = "#eef1f5"; ctx.fillStyle = "#94a3b8"; ctx.font = "11px sans-serif";
+  for (let v = 0; v <= maxV; v += 50) {
+    ctx.beginPath(); ctx.moveTo(padL, y(v)); ctx.lineTo(W - padR, y(v)); ctx.stroke();
+    ctx.fillText(v, 12, y(v) + 4);
+  }
+  // x축 라벨 (10년 단위)
+  QUAKE.forEach((r, i) => { if (r[0] % 10 === 0 || r[0] === 2025) ctx.fillText(r[0], x(i) - 14, H - 12); });
+  // 유감지진 막대
+  ctx.fillStyle = "rgba(245, 158, 11, 0.55)";
+  const bw = Math.max(3, plotW / QUAKE.length - 3);
+  QUAKE.forEach((r, i) => ctx.fillRect(x(i) - bw / 2, y(r[2]), bw, y(0) - y(r[2])));
+  // 총 발생 꺾은선
+  ctx.strokeStyle = "#3b5bdb"; ctx.lineWidth = 2; ctx.beginPath();
+  QUAKE.forEach((r, i) => { i === 0 ? ctx.moveTo(x(i), y(r[3])) : ctx.lineTo(x(i), y(r[3])); });
+  ctx.stroke();
+  ctx.fillStyle = "#3b5bdb";
+  QUAKE.forEach((r, i) => { ctx.beginPath(); ctx.arc(x(i), y(r[3]), 2.5, 0, Math.PI * 2); ctx.fill(); });
+  // 범례
+  ctx.fillStyle = "#3b5bdb"; ctx.fillRect(padL + 8, 8, 12, 12);
+  ctx.fillStyle = "#334155"; ctx.font = "12px sans-serif"; ctx.fillText("총 발생 (M≥2.0)", padL + 25, 18);
+  ctx.fillStyle = "rgba(245,158,11,0.8)"; ctx.fillRect(padL + 145, 8, 12, 12);
+  ctx.fillStyle = "#334155"; ctx.fillText("유감 지진", padL + 162, 18);
+}
+
+// 원본 코랩 코드의 DecisionTreeClassifier(max_depth=3, random_state=42)를
+// 동일 데이터로 학습해 추출한 규칙 (예측 결과가 원본과 동일)
+function predictRisk(mag, total) {
+  if (total <= 64.0) {
+    if (mag <= 15.5) return 0;
+    return total <= 29.5 ? 0 : 1;
+  }
+  if (total <= 87.5) return mag <= 6.0 ? 1 : 0;
+  return 1;
+}
+function predictQuake() {
+  const mag = parseInt(document.getElementById("inMag").value);
+  const total = parseInt(document.getElementById("inTotal").value);
+  const out = document.getElementById("quakeResult");
+  if (isNaN(mag) || isNaN(total)) { out.textContent = "🚨 숫자를 입력해 주세요."; out.style.color = "#b91c1c"; return; }
+  const r = predictRisk(mag, total);
+  if (r === 1) { out.textContent = "💡 AI 최종 판정: 🚨 위험 패턴 감지"; out.style.color = "#dc2626"; }
+  else { out.textContent = "💡 AI 최종 판정: 💚 안정 패턴 감지"; out.style.color = "#16a34a"; }
+}
+
+/* ==================== 모듈 2: PN 접합 다이오드 (원본 코드) ==================== */
+(function() {
+const slider = document.getElementById('vSlider');
+const vVal = document.getElementById('vVal');
+const iVal = document.getElementById('iVal');
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+const boxX = 30, boxY = 40, boxW = 320, boxH = 220, midX = boxX + boxW / 2;
+
+let particles = [];
+for(let i=0; i<15; i++) {
+particles.push({type: 'hole', x: boxX + Math.random() * (boxW/2 - 20), y: boxY + 15 + Math.random() * (boxH - 30)});
+particles.push({type: 'electron', x: midX + Math.random() * (boxW/2 - 20), y: boxY + 15 + Math.random() * (boxH - 30)});
+}
+
+function calculateCurrent(V) { return 1e-6 * (Math.exp(V / 0.08) - 1) * 1000; }
+
+function updateSimulation() {
+const V = parseFloat(slider.value); vVal.innerText = V.toFixed(2);
+const I = calculateCurrent(V); iVal.innerText = I.toFixed(2);
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+ctx.fillStyle = '#edf2f7'; ctx.fillRect(boxX, boxY, boxW/2, boxH);
+ctx.fillStyle = '#fff5f5'; ctx.fillRect(midX, boxY, boxW/2, boxH);
+let depletionHalfWidth = Math.max(3, Math.min(boxW/2 - 15, 45 - (V * 30)));
+ctx.fillStyle = '#e2e8f0'; ctx.fillRect(midX - depletionHalfWidth, boxY, depletionHalfWidth * 2, boxH);
+ctx.strokeStyle = '#cbd5e0'; ctx.lineWidth = 2; ctx.strokeRect(boxX, boxY, boxW, boxH);
+ctx.beginPath(); ctx.moveTo(midX, boxY); ctx.lineTo(midX, boxY + boxH); ctx.strokeStyle = '#a0aec0'; ctx.stroke();
+ctx.fillStyle = '#4a5568'; ctx.font = 'bold 14px sans-serif'; ctx.fillText('P형 (P-type)', boxX + 25, boxY - 12); ctx.fillText('N형 (N-type)', boxX + boxW - 110, boxY - 12);
+ctx.fillStyle = '#718096'; ctx.font = '12px sans-serif'; ctx.fillText('결핍 영역 (장벽)', midX - 42, boxY + boxH + 20);
+
+particles.forEach(p => {
+if (V >= 0.7) {
+let speed = (V - 0.7) * 1.2 + 0.8;
+if (p.type === 'hole') { p.x += speed; if (p.x >= midX) { p.x = boxX; p.y = boxY + 15 + Math.random() * (boxH - 30); } }
+else { p.x -= speed; if (p.x <= midX) { p.x = boxX + boxW; p.y = boxY + 15 + Math.random() * (boxH - 30); } }
+} else {
+p.x += (Math.random() - 0.5) * 0.8; p.y += (Math.random() - 0.5) * 0.8;
+if (p.type === 'hole') { p.x = Math.max(boxX + 10, Math.min(midX - depletionHalfWidth - 8, p.x)); }
+else { p.x = Math.min(boxX + boxW - 10, Math.max(midX + depletionHalfWidth + 8, p.x)); }
+p.y = Math.max(boxY + 10, Math.min(boxY + boxH - 10, p.y));
+}
+ctx.font = 'bold 11px monospace';
+if (p.type === 'hole') { ctx.fillStyle = '#3182ce'; ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, 2*Math.PI); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillText('+', p.x-3, p.y+4); }
+else { ctx.fillStyle = '#e53e3e'; ctx.beginPath(); ctx.arc(p.x, p.y, 8, 0, 2*Math.PI); ctx.fill(); ctx.fillStyle = '#ffffff'; ctx.fillText('-', p.x-3, p.y+3); }
+});
+
+const graphX = 410, graphY = 40, graphW = 280, graphH = 220, zeroY = graphY + graphH - 40, zeroX = graphX + (graphW * 3.0 / 4.1);
+ctx.strokeStyle = '#718096'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(graphX, zeroY); ctx.lineTo(graphX + graphW, zeroY); ctx.moveTo(zeroX, graphY); ctx.lineTo(zeroX, graphY + graphH); ctx.stroke();
+ctx.fillStyle = '#4a5568'; ctx.font = '11px sans-serif'; ctx.fillText('전압 V', graphX + graphW - 35, zeroY + 18); ctx.fillText('전류 I (mA)', zeroX - 65, graphY + 12);
+ctx.strokeStyle = '#0984e3'; ctx.lineWidth = 2.5; ctx.beginPath();
+for (let x = 0; x <= graphW; x++) {
+let v_sim = -3.0 + (x / graphW) * 4.1, y_sim = zeroY - (calculateCurrent(v_sim) * 2.5);
+y_sim = Math.max(graphY, Math.min(graphY + graphH, y_sim));
+if (x === 0) ctx.moveTo(graphX + x, y_sim); else ctx.lineTo(graphX + x, y_sim);
+}
+ctx.stroke();
+let dotX = graphX + ((V + 3.0) / 4.1) * graphW, dotY = Math.max(graphY, zeroY - (I * 2.5));
+ctx.fillStyle = '#d63031'; ctx.beginPath(); ctx.arc(dotX, dotY, 6, 0, 2*Math.PI); ctx.fill();
+requestAnimationFrame(updateSimulation);
+}
+slider.addEventListener('input', updateSimulation);
+requestAnimationFrame(updateSimulation);
+})();
+
+/* ==================== 모듈 3: 에너지 띠 (원본 코드) ==================== */
+(function() {
+const canvas = document.getElementById('bandCanvas'); if (!canvas) return;
+const ctx = canvas.getContext('2d');
+const slider = document.getElementById('temp-slider');
+
+let currentMaterial = 'semiconductor'; let temperature = 0; let cars = []; const totalSlots = 24;
+
+function initCars() {
+cars = [];
+for (let i = 0; i < totalSlots; i++) {
+const row = i % 2; const col = Math.floor(i / 2);
+const slotX = 50 + col * 55 + (row * 15); const slotY = 350 + row * 40;
+cars.push({ id: i, homeX: slotX, homeY: slotY, x: slotX, y: slotY, status: 'parked', speed: 1 + Math.random() * 1.5 });
+}
+}
+
+function setMaterial(type) {
+currentMaterial = type;
+['conductor', 'semiconductor', 'insulator'].forEach(t => {
+const b = document.getElementById(`btn-${t}`);
+if(b) { b.style.background = (t===type)?'#2563eb':'#fff'; b.style.color = (t===type)?'#fff':'#000'; }
+});
+document.getElementById('m-type').innerText = type === 'conductor' ? '도체' : type === 'insulator' ? '부도체' : '반도체';
+if (type === 'conductor') { if (slider) slider.disabled = true; document.getElementById('temp-label').innerText = "온도 제어 불필요 (항상 전도)"; }
+else { if (slider) slider.disabled = false; updateTemperature(slider ? slider.value : 0); }
+initCars();
+}
+
+function updateTemperature(val) { temperature = parseInt(val); if (currentMaterial !== 'conductor') document.getElementById('temp-label').innerText = `온도 / 에너지 공급: ${temperature} K`; }
+
+document.getElementById('btn-conductor').addEventListener('click', () => setMaterial('conductor'));
+document.getElementById('btn-semiconductor').addEventListener('click', () => setMaterial('semiconductor'));
+document.getElementById('btn-insulator').addEventListener('click', () => setMaterial('insulator'));
+slider.addEventListener('input', (e) => updateTemperature(e.target.value));
+
+function drawCar(x, y, color) {
+ctx.save(); ctx.translate(x, y); ctx.fillStyle = color; ctx.beginPath();
+ctx.rect(-15, -6, 30, 12); ctx.fill(); ctx.fillStyle = '#fff'; ctx.globalAlpha = 0.5;
+ctx.fillRect(-6, -10, 14, 5); ctx.globalAlpha = 1.0; ctx.fillStyle = '#0f172a';
+ctx.beginPath(); ctx.arc(-8, 6, 3, 0, Math.PI*2); ctx.arc(8, 6, 3, 0, Math.PI*2); ctx.fill(); ctx.restore();
+}
+
+function animate() {
+if (!document.getElementById('bandCanvas')) return;
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+let gapHeight = currentMaterial === 'conductor' ? 0 : (currentMaterial === 'insulator' ? 200 : 80);
+const conductionBottom = 130; const valenceTop = conductionBottom + gapHeight;
+
+ctx.fillStyle = '#e0f2fe'; ctx.fillRect(0, 0, canvas.width, conductionBottom);
+ctx.fillStyle = '#0369a1'; ctx.font = 'bold 14px sans-serif'; ctx.fillText('⚡ 전도대 (Conduction Band)', 15, 25);
+ctx.fillStyle = '#f1f5f9'; ctx.fillRect(0, conductionBottom, canvas.width, gapHeight);
+if (gapHeight > 0) { ctx.fillStyle = '#94a3b8'; ctx.font = '12px sans-serif'; ctx.fillText(`⛰️ 금지대 (Energy Gap) : 장벽 높이 ${gapHeight}px`, 15, conductionBottom + gapHeight/2 + 5); }
+ctx.fillStyle = '#ffe4e6'; ctx.fillRect(0, valenceTop, canvas.width, canvas.height - valenceTop);
+ctx.fillStyle = '#b91c1c'; ctx.font = 'bold 14px sans-serif'; ctx.fillText('🚗 가전자대 (Valence Band)', 15, valenceTop + 25);
+
+let activeCarCount = currentMaterial === 'conductor' ? totalSlots : (currentMaterial === 'insulator' ? 0 : Math.floor((temperature / 600) * 16));
+let currentElectrons = 0; let currentHoles = 0;
+
+cars.forEach((car, index) => {
+const shouldEscape = index < activeCarCount;
+if (currentMaterial === 'conductor') { car.status = 'driving'; car.y = 70 + (index % 3) * 18; currentElectrons++; }
+else {
+if (shouldEscape) {
+if (car.status === 'parked') car.status = 'climbing';
+if (car.status === 'climbing') {
+const targetY = 60 + (index % 2) * 20;
+if (car.y > targetY) { car.y -= car.speed * 1.5; car.x += Math.sin(car.y / 10) * 0.4; } else { car.y = targetY; car.status = 'driving'; }
+}
+if (car.status === 'driving') { currentElectrons++; car.x += car.speed * 1.8; if (car.x > canvas.width + 15) car.x = -15; }
+currentHoles++;
+} else {
+if (car.status !== 'parked') {
+const dx = car.homeX - car.x, dy = car.homeY - car.y;
+if (Math.abs(dx) > 2 || Math.abs(dy) > 2) { car.x += dx * 0.1; car.y += dy * 0.1; car.status = 'climbing'; }
+else { car.x = car.homeX; car.y = car.homeY; car.status = 'parked'; }
+}
+}
+}
+if (car.status === 'climbing' || car.status === 'driving') {
+ctx.beginPath(); ctx.arc(car.homeX, car.homeY, 8, 0, Math.PI*2); ctx.strokeStyle = '#e11d48'; ctx.lineWidth = 1.5; ctx.stroke();
+}
+drawCar(car.x, car.y, car.status === 'parked' ? '#475569' : '#2563eb');
+});
+
+let conductivity = currentMaterial === 'conductor' ? 100 : (currentMaterial === 'insulator' ? 0 : Math.min(100, Math.round((currentElectrons / totalSlots) * 150)));
+document.getElementById('m-electrons').innerText = `${currentElectrons} 개`;
+document.getElementById('m-holes').innerText = `${currentHoles} 개`;
+document.getElementById('m-conductivity').innerText = `${conductivity} %`;
+requestAnimationFrame(animate);
+}
+initCars(); animate();
+})();
+
+/* ==================== 모듈 4: 반도체 수율 타이쿤 (원본 코드) ==================== */
+(function() {
+const canvas = document.getElementById('mainCanvas'); if(!canvas) return;
+const ctx = canvas.getContext('2d');
+
+let budget = 10000; let cleanroomClass = 100; let totalChips = 0; let currentYield = 0; let currentStage = 'euv'; let isRunning = false; let animProgress = 0;
+let waferReady = false; let lastEuvQuality = 0; let laserX = 50; let dustParticles = []; let lines = []; let stackedLayers = 0; let chipY = [-40, -90, -140, -190];
+
+function generateDust() {
+dustParticles = []; let count = cleanroomClass / 5;
+for(let i=0; i<count; i++) {
+dustParticles.push({ x: Math.random() * canvas.width, y: Math.random() * (canvas.height - 100), r: Math.random() * 3 + 1, vx: (Math.random() - 0.5) * 0.5, vy: (Math.random() - 0.5) * 0.5 });
+}
+}
+
+window.updateParams = function() {
+if(currentStage === 'euv') {
+const wave = document.getElementById('rng-wave').value; const focus = document.getElementById('rng-focus').value;
+document.getElementById('lbl-wave').innerText = wave + " nm"; document.getElementById('lbl-focus').innerText = focus + "%";
+} else {
+const align = document.getElementById('rng-align').value; const press = document.getElementById('rng-press').value;
+document.getElementById('lbl-align').innerText = "±" + align + " ㎛"; document.getElementById('lbl-press').innerText = press + "%";
+}
+}
+
+window.changeStage = function(stage) {
+if(isRunning) return; currentStage = stage;
+document.getElementById('tab-euv').classList.remove('active'); document.getElementById('tab-pkg').classList.remove('active');
+document.getElementById('tab-euv').style.background = '#334155'; document.getElementById('tab-pkg').style.background = '#334155';
+if(stage === 'euv') {
+document.getElementById('tab-euv').classList.add('active'); document.getElementById('tab-euv').style.background = '#0284c7';
+document.getElementById('controls-euv').style.display = 'block'; document.getElementById('controls-pkg').style.display = 'none';
+} else {
+document.getElementById('tab-pkg').classList.add('active'); document.getElementById('tab-pkg').style.background = '#0284c7';
+document.getElementById('controls-euv').style.display = 'none'; document.getElementById('controls-pkg').style.display = 'block';
+}
+resetAnimState();
+}
+
+function resetAnimState() { animProgress = 0; laserX = 50; lines = []; stackedLayers = 0; chipY = [-40, -80, -120, -160]; }
+function addLog(msg, color="#34d399") { const box = document.getElementById('log-box'); box.innerHTML += `<br><span style="color:${color}">${msg}</span>`; box.scrollTop = box.scrollHeight; }
+
+window.upgradeCleanroom = function() {
+if(budget < 3000) { addLog("[경고] 예산이 부족하여 클린룸 업그레이드가 불가능합니다.", "#f43f5e"); return; }
+budget -= 3000; if(cleanroomClass > 10) cleanroomClass /= 10; else if(cleanroomClass > 1) cleanroomClass = 1;
+document.getElementById('txt-budget').innerText = "$" + budget.toLocaleString(); document.getElementById('txt-clean').innerText = "Class " + cleanroomClass;
+addLog(`[업그레이드] 필터 도입 완료! 현재 환경: Class ${cleanroomClass}`, "#38bdf8"); generateDust();
+}
+
+window.startEUV = function() {
+if(budget < 1000) { addLog("[공정 실패] 예산 부족.", "#f43f5e"); return; }
+budget -= 1000; document.getElementById('txt-budget').innerText = "$" + budget.toLocaleString(); isRunning = true; resetAnimState();
+addLog("[공정 시작] EUV 레이저 가동...", "#60a5fa");
+}
+
+window.startPackaging = function() {
+if(!waferReady) return; if(budget < 1500) { addLog("[공정 실패] 예산 부족.", "#f43f5e"); return; }
+budget -= 1500; document.getElementById('txt-budget').innerText = "$" + budget.toLocaleString(); isRunning = true;
+addLog("[공정 시작] HBM 적층 본딩 시작...", "#c084fc");
+}
+
+function draw() {
+if(!document.getElementById('mainCanvas')) return;
+ctx.clearRect(0, 0, canvas.width, canvas.height);
+dustParticles.forEach(p => {
+p.x += p.vx; p.y += p.vy; if(p.x < 0 || p.x > canvas.width) p.vx *= -1; if(p.y < 0 || p.y > canvas.height - 100) p.vy *= -1;
+ctx.fillStyle = 'rgba(226, 232, 240, 0.4)'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2); ctx.fill();
+});
+if(currentStage === 'euv') {
+ctx.fillStyle = '#1e293b'; ctx.fillRect(50, 280, 500, 30); ctx.fillStyle = '#475569'; ctx.fillRect(80, 275, 440, 8);
+ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 1.5; lines.forEach(lx => { ctx.beginPath(); ctx.moveTo(lx, 275); ctx.lineTo(lx, 283); ctx.stroke(); });
+ctx.fillStyle = '#334155'; ctx.fillRect(50, 40, 500, 20);
+if(isRunning) {
+animProgress += 1; laserX = 80 + (animProgress * 3.8);
+if(laserX < 520) {
+if(Math.floor(laserX) % 12 === 0) lines.push(laserX);
+ctx.strokeStyle = 'rgba(236, 72, 153, 0.7)'; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(laserX, 60); ctx.lineTo(laserX, 275); ctx.stroke();
+} else {
+isRunning = false; waferReady = true;
+const wave = parseFloat(document.getElementById('rng-wave').value); const focus = parseInt(document.getElementById('rng-focus').value);
+let waveFactor = Math.max(0, 1 - Math.abs(wave - 13.5) / 20); let focusFactor = focus / 100; let dustFactor = Math.max(0.5, 1 - (cleanroomClass / 300));
+lastEuvQuality = waveFactor * focusFactor * dustFactor;
+addLog(`[EUV 완료] 품질계수: ${(lastEuvQuality*100).toFixed(1)}%`, "#34d399");
+const pBtn = document.getElementById('btn-run-pkg'); pBtn.disabled = false; pBtn.style.background = '#0284c7'; pBtn.style.color = 'white';
+}
+}
+} else {
+ctx.fillStyle = '#065f46'; ctx.fillRect(150, 300, 300, 30); ctx.strokeStyle = '#10b981'; ctx.strokeRect(150, 300, 300, 30);
+for(let i=0; i<stackedLayers; i++) {
+ctx.fillStyle = '#1e40af'; ctx.fillRect(180, 270 - (i*28), 240, 25); ctx.fillStyle = '#fbbf24';
+for(let tx = 195; tx < 420; tx += 30) { ctx.beginPath(); ctx.arc(tx, 282 - (i*28), 2.5, 0, Math.PI*2); ctx.fill(); }
+}
+if(isRunning && stackedLayers < 4) {
+let targetY = 270 - (stackedLayers * 28);
+if(chipY[stackedLayers] < targetY) { chipY[stackedLayers] += 4; ctx.fillStyle = '#4b5563'; ctx.fillRect(180, chipY[stackedLayers], 240, 25); }
+else {
+stackedLayers++;
+if(stackedLayers === 4) {
+isRunning = false; waferReady = false;
+const pBtn = document.getElementById('btn-run-pkg'); pBtn.disabled = true; pBtn.style.background = '#4b5563'; pBtn.style.color = '#9ca3af';
+const align = parseFloat(document.getElementById('rng-align').value); const press = parseInt(document.getElementById('rng-press').value);
+let alignFactor = Math.max(0.2, 1 - (align / 5)); let pressFactor = 1 - Math.abs(press - 90) / 100;
+currentYield = Math.round(lastEuvQuality * alignFactor * pressFactor * 100);
+let producedChips = Math.round(200 * (currentYield/100)); let revenue = producedChips * 50; budget += revenue; totalChips += producedChips;
+document.getElementById('txt-yield').innerText = currentYield + "%"; document.getElementById('txt-budget').innerText = "$" + budget.toLocaleString(); document.getElementById('txt-chips').innerText = totalChips + " EA";
+addLog(`[패키징 완료] 최종 수율: ${currentYield}% | 매출 +$${revenue}`, "#fbbf24");
+}
+}
+}
+}
+requestAnimationFrame(draw);
+}
+generateDust(); window.updateParams(); draw();
+})();
+</script>
+</body>
+</html>

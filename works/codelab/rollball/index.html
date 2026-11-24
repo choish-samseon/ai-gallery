@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>롤링 큐브 헌터 — 3D 공 굴리기</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #1a2130;
+    font-family: "Pretendard", "Pretendard Variable", -apple-system, "Malgun Gothic", sans-serif;
+    -webkit-user-select: none; user-select: none; touch-action: none; }
+  #c { display: block; width: 100%; height: 100%; }
+
+  .hud { position: fixed; z-index: 5; color: #fff; font-weight: 800; text-shadow: 0 2px 8px rgba(10,15,30,.6); }
+  #count { top: 16px; left: 18px; font-size: 1.25rem; }
+  #count small { font-size: 0.8rem; opacity: 0.8; font-weight: 700; }
+  #timer { top: 16px; right: 18px; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+
+  .overlay { position: fixed; inset: 0; z-index: 10; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px; text-align: center;
+    background: rgba(16, 21, 33, 0.72); backdrop-filter: blur(4px); color: #fff; padding: 20px; }
+  .overlay.hide { display: none; }
+  .overlay .tag { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.1em;
+    background: #ffffff22; border: 1px solid #ffffff44; border-radius: 999px; padding: 4px 12px; }
+  .overlay h1 { font-size: clamp(1.5rem, 5vw, 2.3rem); font-weight: 900; }
+  .overlay p { font-size: 0.92rem; color: #cfd6e4; line-height: 1.7; }
+  .overlay .keys { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .overlay .key { background: #ffffff18; border: 1px solid #ffffff3a; border-radius: 9px;
+    padding: 7px 13px; font-size: 0.84rem; font-weight: 800; }
+  .overlay button { margin-top: 8px; background: #e2564a; color: #fff; border: none; border-radius: 12px;
+    padding: 13px 38px; font-size: 1.05rem; font-weight: 900; cursor: pointer; font-family: inherit;
+    box-shadow: 0 8px 22px rgba(226, 86, 74, .4); }
+  .overlay button:hover { background: #c94437; }
+  #winTime { font-size: 1.4rem; font-weight: 900; color: #ffd21f; }
+  #best { font-size: 0.84rem; color: #9fc0ff; }
+
+  #pad { position: fixed; z-index: 6; right: 18px; bottom: 18px; display: none;
+    grid-template-columns: repeat(3, 56px); grid-template-rows: repeat(2, 56px); gap: 7px; }
+  #pad.show { display: grid; }
+  #pad button { border: none; border-radius: 14px; background: rgba(255,255,255,.16);
+    color: #fff; font-size: 1.3rem; font-weight: 900; backdrop-filter: blur(3px); }
+  #pad button:active { background: rgba(226,86,74,.6); }
+  #pU { grid-column: 2; grid-row: 1; } #pL { grid-column: 1; grid-row: 2; }
+  #pD { grid-column: 2; grid-row: 2; } #pR { grid-column: 3; grid-row: 2; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="hud" id="count">🧊 0 <small>/ 12</small></div>
+<div class="hud" id="timer">⏱ 0.0초</div>
+
+<div class="overlay" id="startOv">
+  <span class="tag">코드설계소 · 3D 게임 프로젝트</span>
+  <h1>🔵 롤링 큐브 헌터</h1>
+  <p>공을 굴려서 떠 있는 황금 큐브 12개를 모두 모으세요!<br>회색 기둥에 부딪히면 튕겨 나갑니다. 최단 기록에 도전!</p>
+  <div class="keys">
+    <span class="key">⬆⬇⬅➡ 또는 WASD — 굴리기</span>
+    <span class="key">📱 모바일 — 화면 버튼</span>
+  </div>
+  <button id="startBtn">게임 시작</button>
+</div>
+
+<div class="overlay hide" id="winOv">
+  <h1>🏆 YOU WIN!</h1>
+  <p>황금 큐브 12개를 모두 모았습니다!</p>
+  <div id="winTime"></div>
+  <div id="best"></div>
+  <button id="againBtn">다시 하기</button>
+</div>
+
+<div id="pad">
+  <button id="pU">▲</button><button id="pL">◀</button><button id="pD">▼</button><button id="pR">▶</button>
+</div>
+
+<script src="three.min.js"></script>
+<script>
+(function () {
+  var canvas = document.getElementById("c");
+  var renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+  var scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x87b5e0);
+  scene.fog = new THREE.Fog(0x87b5e0, 45, 90);
+
+  var camera = new THREE.PerspectiveCamera(55, 1, 0.1, 200);
+
+  // ---- 조명 ----
+  scene.add(new THREE.HemisphereLight(0xdfeaff, 0x5a6a52, 0.75));
+  var sun = new THREE.DirectionalLight(0xfff3d6, 0.95);
+  sun.position.set(14, 26, 10);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = -28; sun.shadow.camera.right = 28;
+  sun.shadow.camera.top = 28; sun.shadow.camera.bottom = -28;
+  scene.add(sun);
+
+  // ---- 바닥 & 벽 ----
+  var HALF = 20; // 바닥 절반 크기
+  var ground = new THREE.Mesh(
+    new THREE.BoxGeometry(HALF * 2, 1, HALF * 2),
+    new THREE.MeshStandardMaterial({ color: 0x8fd17e, roughness: 0.95 })
+  );
+  ground.position.y = -0.5;
+  ground.receiveShadow = true;
+  scene.add(ground);
+
+  // 체커 타일 (유니티 그리드 느낌)
+  var tileG = new THREE.PlaneGeometry(2, 2);
+  var tileM = new THREE.MeshStandardMaterial({ color: 0x7cbf6d, roughness: 0.95 });
+  for (var tx = -HALF + 1; tx < HALF; tx += 2) {
+    for (var tz = -HALF + 1; tz < HALF; tz += 2) {
+      if (((tx + tz) / 2) % 2 === 0) continue;
+      var t = new THREE.Mesh(tileG, tileM);
+      t.rotation.x = -Math.PI / 2;
+      t.position.set(tx, 0.012, tz);
+      t.receiveShadow = true;
+      scene.add(t);
+    }
+  }
+
+  var wallM = new THREE.MeshStandardMaterial({ color: 0x5f87b8, roughness: 0.6 });
+  function wall(w, d, x, z) {
+    var m = new THREE.Mesh(new THREE.BoxGeometry(w, 2.2, d), wallM);
+    m.position.set(x, 1.1, z);
+    m.castShadow = true; m.receiveShadow = true;
+    scene.add(m);
+  }
+  wall(HALF * 2 + 1, 1, 0, -HALF - 0.5);
+  wall(HALF * 2 + 1, 1, 0, HALF + 0.5);
+  wall(1, HALF * 2 + 1, -HALF - 0.5, 0);
+  wall(1, HALF * 2 + 1, HALF + 0.5, 0);
+
+  // ---- 장애물 기둥 ----
+  var OBS = [
+    { x: -8, z: -8 }, { x: 8, z: -8 }, { x: -8, z: 8 }, { x: 8, z: 8 },
+    { x: 0, z: -12 }, { x: 0, z: 12 }, { x: -12, z: 0 }, { x: 12, z: 0 }
+  ];
+  var obsM = new THREE.MeshStandardMaterial({ color: 0xb8c0cc, roughness: 0.5 });
+  OBS.forEach(function (o) {
+    var m = new THREE.Mesh(new THREE.BoxGeometry(2, 3.2, 2), obsM);
+    m.position.set(o.x, 1.6, o.z);
+    m.castShadow = true; m.receiveShadow = true;
+    scene.add(m);
+  });
+
+  // ---- 황금 큐브 12개 ----
+  var cubePos = [];
+  for (var i = 0; i < 8; i++) {
+    var a = (i / 8) * Math.PI * 2;
+    cubePos.push([Math.cos(a) * 14, Math.sin(a) * 14]);
+  }
+  cubePos.push([-4, -4], [4, -4], [-4, 4], [4, 4]);
+  var cubeM = new THREE.MeshStandardMaterial({ color: 0xffc224, metalness: 0.55, roughness: 0.25, emissive: 0x6b4a00 });
+  var cubes = cubePos.map(function (p) {
+    var m = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.95, 0.95), cubeM);
+    m.position.set(p[0], 1.05, p[1]);
+    m.castShadow = true;
+    m.userData.base = 1.05;
+    scene.add(m);
+    return m;
+  });
+
+  // ---- 플레이어 공 ----
+  var ball = new THREE.Mesh(
+    new THREE.SphereGeometry(0.72, 40, 28),
+    new THREE.MeshStandardMaterial({ color: 0x3478ff, metalness: 0.3, roughness: 0.35 })
+  );
+  ball.castShadow = true;
+  scene.add(ball);
+
+  // ---- 상태 ----
+  var vel = new THREE.Vector3();
+  var playing = false, won = false;
+  var count = 0, t0 = 0, elapsed = 0;
+  var countEl = document.getElementById("count");
+  var timerEl = document.getElementById("timer");
+  var keys = {};
+
+  function reset() {
+    ball.position.set(0, 0.72, 17);
+    vel.set(0, 0, 0);
+    count = 0; elapsed = 0; won = false;
+    cubes.forEach(function (c) { c.visible = true; });
+    countEl.innerHTML = "🧊 0 <small>/ 12</small>";
+    timerEl.textContent = "⏱ 0.0초";
+  }
+  reset();
+
+  // ---- 입력 ----
+  window.addEventListener("keydown", function (e) {
+    keys[e.key.toLowerCase()] = true;
+    if (["arrowup", "arrowdown", "arrowleft", "arrowright", " "].indexOf(e.key.toLowerCase()) >= 0) e.preventDefault();
+  });
+  window.addEventListener("keyup", function (e) { keys[e.key.toLowerCase()] = false; });
+
+  var pad = document.getElementById("pad");
+  if ("ontouchstart" in window) pad.classList.add("show");
+  [["pU", "arrowup"], ["pD", "arrowdown"], ["pL", "arrowleft"], ["pR", "arrowright"]].forEach(function (pr) {
+    var b = document.getElementById(pr[0]);
+    b.addEventListener("touchstart", function (e) { e.preventDefault(); keys[pr[1]] = true; }, { passive: false });
+    b.addEventListener("touchend", function (e) { e.preventDefault(); keys[pr[1]] = false; }, { passive: false });
+  });
+
+  // ---- 시작/승리 ----
+  var startOv = document.getElementById("startOv");
+  var winOv = document.getElementById("winOv");
+  document.getElementById("startBtn").addEventListener("click", function () {
+    startOv.classList.add("hide");
+    playing = true;
+    t0 = performance.now();
+  });
+  document.getElementById("againBtn").addEventListener("click", function () {
+    winOv.classList.add("hide");
+    reset();
+    playing = true;
+    t0 = performance.now();
+  });
+
+  function bestGet() { try { return parseFloat(localStorage.getItem("rollball_best") || "0"); } catch (e) { return 0; } }
+  function bestSet(v) { try { localStorage.setItem("rollball_best", String(v)); } catch (e) {} }
+
+  function winGame() {
+    playing = false; won = true;
+    var sec = elapsed / 1000;
+    document.getElementById("winTime").textContent = "기록: " + sec.toFixed(1) + "초";
+    var best = bestGet();
+    if (!best || sec < best) { bestSet(sec); best = sec; }
+    document.getElementById("best").textContent = "🥇 최고 기록: " + best.toFixed(1) + "초 (이 브라우저 기준)";
+    winOv.classList.remove("hide");
+  }
+
+  // ---- 물리 ----
+  var ACC = 26, FRICTION = 2.6, MAXV = 13, R = 0.72;
+  function physics(dt) {
+    var ix = (keys["arrowright"] || keys["d"] ? 1 : 0) - (keys["arrowleft"] || keys["a"] ? 1 : 0);
+    var iz = (keys["arrowdown"] || keys["s"] ? 1 : 0) - (keys["arrowup"] || keys["w"] ? 1 : 0);
+    if (ix && iz) { ix *= 0.7071; iz *= 0.7071; }
+    vel.x += ix * ACC * dt;
+    vel.z += iz * ACC * dt;
+    vel.x -= vel.x * FRICTION * dt;
+    vel.z -= vel.z * FRICTION * dt;
+    var sp = Math.hypot(vel.x, vel.z);
+    if (sp > MAXV) { vel.x *= MAXV / sp; vel.z *= MAXV / sp; }
+    ball.position.x += vel.x * dt;
+    ball.position.z += vel.z * dt;
+
+    // 벽
+    var L = HALF - R;
+    if (ball.position.x < -L) { ball.position.x = -L; vel.x = Math.abs(vel.x) * 0.55; }
+    if (ball.position.x > L) { ball.position.x = L; vel.x = -Math.abs(vel.x) * 0.55; }
+    if (ball.position.z < -L) { ball.position.z = -L; vel.z = Math.abs(vel.z) * 0.55; }
+    if (ball.position.z > L) { ball.position.z = L; vel.z = -Math.abs(vel.z) * 0.55; }
+
+    // 기둥 (AABB, half=1)
+    for (var i = 0; i < OBS.length; i++) {
+      var o = OBS[i];
+      var dx = ball.position.x - Math.max(o.x - 1, Math.min(ball.position.x, o.x + 1));
+      var dz = ball.position.z - Math.max(o.z - 1, Math.min(ball.position.z, o.z + 1));
+      var d2 = dx * dx + dz * dz;
+      if (d2 < R * R && d2 > 0.000001) {
+        var d = Math.sqrt(d2), push = (R - d) / d;
+        ball.position.x += dx * push;
+        ball.position.z += dz * push;
+        var nx = dx / d, nz = dz / d;
+        var dot = vel.x * nx + vel.z * nz;
+        if (dot < 0) { vel.x -= 1.6 * dot * nx; vel.z -= 1.6 * dot * nz; }
+      }
+    }
+
+    // 공 굴림 회전
+    ball.rotation.z -= vel.x * dt / R;
+    ball.rotation.x += vel.z * dt / R;
+
+    // 큐브 수집
+    for (var j = 0; j < cubes.length; j++) {
+      var cmesh = cubes[j];
+      if (!cmesh.visible) continue;
+      var ddx = cmesh.position.x - ball.position.x;
+      var ddz = cmesh.position.z - ball.position.z;
+      if (ddx * ddx + ddz * ddz < 1.6) {
+        cmesh.visible = false;
+        count++;
+        countEl.innerHTML = "🧊 " + count + " <small>/ 12</small>";
+        if (count >= 12) winGame();
+      }
+    }
+  }
+
+  // ---- 루프 ----
+  var last = performance.now();
+  function frame(now) {
+    requestAnimationFrame(frame);
+    var dt = Math.min((now - last) / 1000, 0.05);
+    last = now;
+
+    var tt = now / 1000;
+    cubes.forEach(function (cm, idx) {
+      if (!cm.visible) return;
+      cm.rotation.y = tt * 1.6 + idx;
+      cm.position.y = cm.userData.base + Math.sin(tt * 2.2 + idx) * 0.14;
+    });
+
+    if (playing) {
+      physics(dt);
+      elapsed = now - t0;
+      timerEl.textContent = "⏱ " + (elapsed / 1000).toFixed(1) + "초";
+    }
+
+    // 카메라 따라가기 (유니티 튜토리얼식 고정 오프셋)
+    var cx = ball.position.x, cz = ball.position.z + 13.5;
+    camera.position.x += (cx - camera.position.x) * 0.08;
+    camera.position.z += (cz - camera.position.z) * 0.08;
+    camera.position.y += (11 - camera.position.y) * 0.08;
+    camera.lookAt(ball.position.x, 0.8, ball.position.z);
+
+    renderer.render(scene, camera);
+  }
+
+  function resize() {
+    var w = window.innerWidth, h = window.innerHeight;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener("resize", resize);
+  resize();
+  camera.position.set(0, 11, 30);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

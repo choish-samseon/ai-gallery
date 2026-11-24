@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>햄스터 로봇 프로젝트 | 삼선중학교 온라인 산출물 전시관</title>
+  <meta name="description" content="가로 4cm 로봇 햄스터S와 함께한 트랙 주행 미션 — 1학년 피지컬 컴퓨팅 수업의 성장 기록.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8E%A8%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    :root { --room-color: var(--room-ham); }
+
+    /* ---------- 해부도 ---------- */
+    .anatomy-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; align-items: center; }
+    @media (max-width: 820px) { .anatomy-grid { grid-template-columns: 1fr; } }
+    .anatomy-figure { background: #fff; border: 1px solid var(--line, #e3e8ef); border-radius: 16px; padding: 18px; }
+    .anatomy-figure svg { width: 100%; height: auto; display: block; }
+    .anatomy-panel h3 { font-size: 1.02rem; font-weight: 800; margin: 18px 0 8px; }
+    .anatomy-panel h3:first-child { margin-top: 0; }
+    .io-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .io-tag { background: #fff; border: 1px solid var(--line, #e3e8ef); border-radius: 999px; padding: 6px 12px; font-size: 0.82rem; font-weight: 700; }
+    .io-tag b { color: var(--room-ham); }
+    .ipo-strip { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 8px; align-items: stretch; margin-top: 22px; }
+    .ipo { background: #fff; border: 1px solid var(--line, #e3e8ef); border-radius: 14px; padding: 14px; text-align: center; }
+    .ipo .ic { font-size: 1.5rem; }
+    .ipo b { display: block; margin-top: 4px; font-size: 0.92rem; }
+    .ipo span { font-size: 0.78rem; color: #5b6676; }
+    .ipo-arrow { align-self: center; font-weight: 900; color: var(--room-ham); font-size: 1.2rem; }
+    @media (max-width: 680px) { .ipo-strip { grid-template-columns: 1fr; } .ipo-arrow { transform: rotate(90deg); justify-self: center; } }
+
+    /* ---------- 미션 로드맵 ---------- */
+    .mission-list { display: flex; flex-direction: column; gap: 22px; margin-top: 26px; }
+    .mission-card {
+      display: grid; grid-template-columns: auto 1fr 300px; gap: 20px;
+      background: #fff; border: 1px solid var(--line, #e3e8ef); border-radius: 18px;
+      padding: 22px 24px; align-items: center;
+    }
+    @media (max-width: 880px) { .mission-card { grid-template-columns: auto 1fr; } .track-box { grid-column: 1 / -1; max-width: 340px; margin: 0 auto; } }
+    .mc-rail { display: flex; flex-direction: column; align-items: center; gap: 8px; align-self: stretch; }
+    .mc-no {
+      width: 44px; height: 44px; border-radius: 50%; background: var(--room-ham); color: #fff;
+      font-weight: 900; display: flex; align-items: center; justify-content: center; font-size: 0.95rem;
+    }
+    .mc-line { flex: 1; width: 3px; border-radius: 2px; background: #f0d9ae; }
+    .mc-lesson { font-size: 0.78rem; font-weight: 800; color: var(--room-ham); letter-spacing: 0.08em; }
+    .mc-body h3 { font-size: 1.15rem; font-weight: 900; margin: 2px 0 6px; }
+    .mc-mission { font-size: 0.9rem; font-weight: 800; margin-bottom: 6px; }
+    .mc-desc { font-size: 0.88rem; color: #4a5468; line-height: 1.65; }
+    .mc-chips { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+    .mchip { background: #faf3e4; color: #8a6414; border-radius: 999px; padding: 4px 10px; font-size: 0.75rem; font-weight: 800; }
+    .run-video {
+      margin-top: 12px; border: 1.5px dashed #d9c79a; border-radius: 10px; background: #fcf9f2;
+      padding: 9px 12px; font-size: 0.8rem; font-weight: 700; color: #a08748;
+    }
+    .run-player { margin-top: 12px; border-radius: 12px; overflow: hidden; border: 1px solid #ecdebd; background: #000; }
+    .run-player video { width: 100%; display: block; }
+    .run-player-cap { font-size: 0.75rem; font-weight: 700; color: #a08748; margin-top: 6px; }
+    .track-box { background: #f7f9fc; border: 1px solid var(--line, #e3e8ef); border-radius: 14px; padding: 10px; }
+    .track-box svg { width: 100%; height: auto; display: block; }
+    .track-cap { text-align: center; font-size: 0.75rem; color: #7c8698; margin-top: 4px; }
+
+    details.code-fold { margin-top: 10px; }
+    .code-fold summary { cursor: pointer; list-style: none; display: inline-flex; align-items: center; gap: 7px;
+      background: #fff; border: 1.5px solid #ecd9ae; color: #9a6a10; font-weight: 800; font-size: 0.82rem;
+      padding: 8px 14px; border-radius: 999px; user-select: none; }
+    .code-fold summary::-webkit-details-marker { display: none; }
+    .code-fold[open] summary { background: #faf3e4; }
+    .blocks { margin-top: 10px; background: #e9edf3; border-radius: 12px; padding: 14px 16px; overflow-x: auto; }
+    .blocks .bstack + .bstack { margin-top: 18px; }
+    .blk { display: flex; align-items: center; gap: 7px; width: max-content; color: #fff; font-size: 0.76rem;
+      font-weight: 700; padding: 7px 11px; border-radius: 9px; margin-top: 4px; white-space: nowrap;
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,.14); }
+    .blk.hat { border-radius: 18px 18px 9px 9px; background: linear-gradient(180deg, #ffb020, #f29a0a); }
+    .blk.mv { background: #d44fc0; }
+    .blk.led { background: #8a63d2; }
+    .blk.snd { background: #9353c9; }
+    .blk.fl { background: #f0782a; }
+    .blk.var { background: #2fb3a6; }
+    .b-tag { background: #f1f3f7; color: #5b6472; border-radius: 6px; padding: 2px 8px; font-weight: 800; }
+    .b-pill { background: #fff; color: #303845; border-radius: 999px; padding: 2px 10px; font-weight: 800; min-width: 14px; text-align: center; }
+    .b-drop { background: #fff; color: #303845; border-radius: 7px; padding: 2px 8px; font-weight: 800; }
+    .b-drop::after { content: " ▾"; color: #98a0ad; font-size: 0.85em; }
+    .b-sw { width: 24px; height: 15px; border-radius: 8px; display: inline-block; border: 1px solid rgba(0,0,0,.18); }
+    .b-sub { background: rgba(255,255,255,.22); border-radius: 6px; padding: 2px 7px; font-size: 0.92em; }
+    .hx { display: inline-flex; align-items: center; gap: 6px; padding: 5px 14px; color: #fff; font-weight: 700;
+      clip-path: polygon(9px 0, calc(100% - 9px) 0, 100% 50%, calc(100% - 9px) 100%, 9px 100%, 0 50%); }
+    .hx-b { background: #45b1e8; }
+    .hx-g { background: #2ec08f; padding: 5px 16px; }
+    .cbody { border-left: 9px solid #f0782a; padding: 2px 0 6px 10px; width: max-content; }
+    .cend { width: 56px; height: 11px; background: #f0782a; border-radius: 0 7px 7px 7px; }
+    .section-lead { max-width: 760px; color: #4a5468; line-height: 1.7; margin-top: 10px; }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="../index.html" class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        삼선중학교 온라인 산출물 전시관
+      </a>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="gnb">메뉴</button>
+      <nav class="gnb" id="gnb" aria-label="전시관 메뉴">
+        <a href="minecraft.html">마인크래프트</a>
+        <a href="aiphoto.html">AI 사진전</a>
+        <a href="hamster.html" class="active">햄스터 로봇</a>
+        <a href="game.html">게임 개발</a>
+        <a href="physical.html">피지컬 컴퓨팅</a>
+        <a href="codelab.html">코드설계소</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <p class="room-no">제3전시관</p>
+        <h1>햄스터 로봇 프로젝트</h1>
+        <p>
+          가로 4cm의 작은 로봇 햄스터S와 함께한 9번의 미션.<br>
+전진 한 번 못 하던 첫 시간부터 정류장마다 알아서 서는 버스 로봇까지 —
+          트랙 위에서 펼쳐진 1학년 피지컬 컴퓨팅 수업의 성장 기록입니다.
+        </p>
+      </div>
+    </section>
+
+    
+
+    <section class="section">
+      <div class="container">
+        <h2>9번의 미션, 트랙 위의 성장기</h2>
+        <p class="section-lead">
+          매 차시는 "간단한 이론 → 트랙 미션 해결" 순서로 진행됩니다.<br>
+A3 용지에 실제 크기로 인쇄한 트랙 위에서, 학생들은 미션을 하나씩 깨며
+          센서와 조건, 변수와 반복을 몸으로 익혔습니다.
+        </p>
+        <div class="mission-list">
+      <article class="mission-card">
+        <div class="mc-rail"><span class="mc-no">01</span><span class="mc-line"></span></div>
+        <div class="mc-body">
+          <p class="mc-lesson">1차시</p>
+          <h3>피지컬 컴퓨팅 기본 원리</h3>
+          <p class="mc-mission">🎯 미션 — 햄스터S와 첫 만남</p>
+          <p class="mc-desc">가로 4cm 로봇 햄스터S를 USB 동글로 무선 연결하고, 첫 코드로 LED를 켜고 비프음을 울립니다.<br>
+프로그램이 화면 밖 실제 물체를 움직이는 순간입니다.</p>
+          <div class="mc-chips"><span class="mchip">입력 → 처리 → 출력</span><span class="mchip">디바이스 연결</span><span class="mchip">LED · 버저 출력</span></div>
+          <div class="run-player" data-lesson="1"><video src="../videos/hamster/lesson1.mp4" poster="../videos/hamster/poster1.jpg" controls muted playsinline preload="none"></video></div>
+          <p class="run-player-cap">🎬 학생 주행 영상 — LED가 초록 · 노랑 · 빨강 순서로!</p>
+          <details class="code-fold"><summary>💻 1차시 미션 코드 보기</summary><div class="blocks"><div class="blk hat"><span class="b-drop">1차시 기본</span><span>(이)가 눌린 적이 있는가?</span><span>일 때</span></div><div class="blk led"><span class="b-tag">햄스터S 0</span><span class="b-drop">모든</span><span>LED를</span><span class="b-sw" style="background:#2ecc40"></span><span>으로 켜기</span></div><div class="blk fl"><span class="b-pill">3</span><span>초 기다리기</span></div><div class="blk led"><span class="b-tag">햄스터S 0</span><span class="b-drop">모든</span><span>LED를</span><span class="b-sw" style="background:#ffd21f"></span><span>으로 켜기</span></div><div class="blk fl"><span class="b-pill">1</span><span>초 기다리기</span></div><div class="blk led"><span class="b-tag">햄스터S 0</span><span class="b-drop">모든</span><span>LED를</span><span class="b-sw" style="background:#ff3b30"></span><span>으로 켜기</span></div><div class="blk fl"><span class="b-pill">3</span><span>초 기다리기</span></div><div class="blk snd"><span class="b-tag">햄스터S 0</span><span>비프음 한 번 재생하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk led"><span class="b-tag">햄스터S 0</span><span class="b-drop">모든</span><span>LED 끄기</span></div></div></details>
+        </div>
+        <div class="track-box"><svg viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><rect x="110" y="55" width="80" height="80" rx="18" fill="#f5c04a" stroke="#3a4454" stroke-width="3"/>
+<rect x="96" y="70" width="14" height="50" rx="6" fill="#3a4454"/><rect x="190" y="70" width="14" height="50" rx="6" fill="#3a4454"/>
+<circle cx="132" cy="68" r="6" fill="#3ad29f"/><circle cx="168" cy="68" r="6" fill="#e2564a"/>
+<circle cx="150" cy="70" r="4" fill="#3a4454"/>
+<g stroke="#e8971e" stroke-width="4" stroke-linecap="round" fill="none">
+<path d="M 205 90 a 22 22 0 0 1 0 24"/><path d="M 220 80 a 38 38 0 0 1 0 44"/></g>
+<text x="86" y="100" text-anchor="end" font-family="sans-serif" font-size="22">💡</text>
+<text x="150" y="165" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="700" fill="#3a4454">LED 켜기 · 비프음 내기</text></svg></div>
+      </article>
+      <article class="mission-card">
+        <div class="mc-rail"><span class="mc-no">02</span><span class="mc-line"></span></div>
+        <div class="mc-body">
+          <p class="mc-lesson">2차시</p>
+          <h3>기본 이동</h3>
+          <p class="mc-mission">🎯 미션 — S자 트랙 통과하기</p>
+          <p class="mc-desc">직진으로 거리를 맞추고, 두 바퀴의 속도를 다르게 해 반원 두 개를 이어 S자를 완성합니다.<br>
+도전 미션은 90도 회전 4번을 반복해 정사각형을 그리며 제자리로 돌아오기.</p>
+          <div class="mc-chips"><span class="mchip">순차와 반복</span><span class="mchip">두 바퀴 속도 차 = 곡선</span><span class="mchip">각도 회전</span></div>
+          <div class="run-player" data-lesson="2"><video src="../videos/hamster/lesson2.mp4" poster="../videos/hamster/poster2.jpg" controls muted playsinline preload="none"></video></div>
+          <p class="run-player-cap">🎬 학생 주행 영상 — S자 트랙을 시간 계산만으로 완주!</p>
+          <details class="code-fold"><summary>💻 2차시 미션 코드 보기</summary><div class="blocks"><div class="blk hat"><span class="b-drop">2차시 기본</span><span>(이)가 눌린 적이 있는가?</span><span>일 때</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>동작 속도를</span><span class="b-pill">50</span><span>%로 정하기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">앞</span><span>(으)로</span><span class="b-pill">2.7</span><span class="b-drop">초</span><span>만큼 동작하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk fl"><span class="b-pill">1</span><span>초 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">반시계방향</span><span>으로</span><span class="b-pill">90</span><span>도 만큼 회전하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-pill">70</span><span>%,</span><span class="b-pill">40</span><span>%의 속도로</span><span class="b-pill">4</span><span class="b-drop">초</span><span>만큼 동작하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-pill">40</span><span>%,</span><span class="b-pill">70</span><span>%의 속도로</span><span class="b-pill">3.5</span><span class="b-drop">초</span><span>만큼 동작하기</span><span class="b-sub">⏱ 기다리기</span></div></div></details>
+        </div>
+        <div class="track-box"><svg viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg">
+<path d="M 56 110 H 94" stroke="#3a4454" stroke-width="4" fill="none"/>
+<path d="M 94 110 A 36 36 0 0 1 166 110" stroke="#3a4454" stroke-width="4" fill="none"/>
+<path d="M 166 110 A 36 36 0 0 0 238 110" stroke="#3a4454" stroke-width="4" fill="none"/>
+<rect x="8" y="96" width="48" height="28" rx="5" fill="#ffffff" stroke="#3a4454" stroke-width="2"/><text x="32.0" y="113.96" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#3a4454">START</text>
+<rect x="238" y="96" width="48" height="28" rx="5" fill="#ffffff" stroke="#e8971e" stroke-width="2"/><text x="262.0" y="113.96" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#e8971e">END</text>
+<rect x="72" y="118" width="44" height="20" rx="10" fill="#eef1f6"/><text x="94" y="132" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="800" fill="#3a4454">STOP</text>
+<rect x="144" y="118" width="44" height="20" rx="10" fill="#eef1f6"/><text x="166" y="132" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="800" fill="#3a4454">STOP</text>
+<g font-family="sans-serif" font-size="10" fill="#7c8698">
+<text x="75" y="92" text-anchor="middle">① 직진</text>
+<text x="130" y="58" text-anchor="middle">② 반원 (위)</text>
+<text x="202" y="168" text-anchor="middle">③ 반원 (아래)</text>
+</g>
+<text x="150" y="186" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="#3a4454">STOP마다 1초 멈추며 S자 완성</text>
+</svg></div>
+      </article>
+      <article class="mission-card">
+        <div class="mc-rail"><span class="mc-no">03</span><span class="mc-line"></span></div>
+        <div class="mc-body">
+          <p class="mc-lesson">3차시</p>
+          <h3>장애물 앞에서 멈추기</h3>
+          <p class="mc-mission">🎯 미션 — STOP ZONE 안에 정지하라</p>
+          <p class="mc-desc">근접 센서 값을 거리별로 직접 재서 나만의 기준값을 정하고, 장애물을 감지하면 STOP ZONE 안에서 정확히 멈춥니다.<br>
+멈추면 LED 빨강과 비프음으로 알립니다.</p>
+          <div class="mc-chips"><span class="mchip">근접 센서</span><span class="mchip">기준값 정하기</span><span class="mchip">~까지 기다리기</span></div>
+          <div class="run-player" data-lesson="3"><video src="../videos/hamster/lesson3.mp4" poster="../videos/hamster/poster3.jpg" controls muted playsinline preload="none"></video></div>
+          <p class="run-player-cap">🎬 학생 주행 영상 — 장애물 앞에서 스스로 정지!</p>
+          <details class="code-fold"><summary>💻 3차시 미션 코드 보기</summary><div class="blocks"><div class="blk hat"><span class="b-drop">3차시 기본</span><span>(이)가 눌린 적이 있는가?</span><span>일 때</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>동작 속도를</span><span class="b-pill">50</span><span>%로 정하기</span></div><div class="blk led"><span class="b-tag">햄스터S 0</span><span class="b-drop">모든</span><span>LED를</span><span class="b-sw" style="background:#2ecc40"></span><span>으로 켜기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">앞</span><span>(으)로 동작하기</span></div><div class="blk fl"><span class="hx hx-b"><span class="b-tag">햄스터S 0</span><span class="b-drop">왼쪽</span><span>근접 센서의 값(%)</span><span class="b-drop">&gt;</span><span class="b-pill">60</span><span>%?</span></span><span>일 때까지 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>동작 멈추기</span></div><div class="blk led"><span class="b-tag">햄스터S 0</span><span class="b-drop">모든</span><span>LED를</span><span class="b-sw" style="background:#ff3b30"></span><span>으로 켜기</span></div><div class="blk snd"><span class="b-tag">햄스터S 0</span><span>비프음 한 번 재생하기</span><span class="b-sub">⏱ 기다리기</span></div></div></details>
+        </div>
+        <div class="track-box"><svg viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><rect x="14" y="80" width="56" height="30" rx="5" fill="#ffffff" stroke="#3a4454" stroke-width="2"/><text x="42.0" y="98.96" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#3a4454">START</text>
+<path d="M 70 95 H 240" stroke="#3a4454" stroke-width="4" fill="none" stroke-dasharray="8 7"/>
+<rect x="160" y="70" width="60" height="50" rx="6" fill="#e8971e22" stroke="#e8971e" stroke-width="2" stroke-dasharray="6 5"/>
+<text x="190" y="63" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="800" fill="#e8971e">STOP ZONE</text>
+<rect x="244" y="62" width="30" height="66" rx="5" fill="#3a4454"/>
+<text x="259" y="145" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#7c8698">장애물</text>
+<g stroke="#99a3b4" stroke-width="2"><line x1="240" y1="100" x2="240" y2="112"/><line x1="214" y1="100" x2="214" y2="112"/><line x1="201" y1="100" x2="201" y2="112"/><line x1="175" y1="100" x2="175" y2="112"/><line x1="149" y1="100" x2="149" y2="112"/><line x1="123" y1="100" x2="123" y2="112"/></g>
+<g font-family="sans-serif" font-size="9" fill="#7c8698">
+<text x="236" y="126">0</text><text x="209" y="126">2</text><text x="196" y="126">3</text><text x="170" y="126">5</text><text x="141" y="126">10</text><text x="113" y="126">15</text></g>
+<text x="150" y="172" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="#3a4454">거리 눈금을 보며 기준값 정하기</text></svg></div>
+      </article>
+      <article class="mission-card">
+        <div class="mc-rail"><span class="mc-no">04</span><span class="mc-line"></span></div>
+        <div class="mc-body">
+          <p class="mc-lesson">4차시</p>
+          <h3>거리에 따라 반응하는 로봇</h3>
+          <p class="mc-mission">🎯 미션 — 3단계 주차 경보기</p>
+          <p class="mc-desc">기준값 2개로 거리를 멀다·가깝다·아주 가깝다 3단계로 나눠 LED 색이 달라지는 주차 경보기를 만듭니다.<br>
+도전 미션은 손과의 거리를 스스로 지키며 따라오는 로봇.</p>
+          <div class="mc-chips"><span class="mchip">만약 / 혹은 / 아니면</span><span class="mchip">기준값 2개 → 3단계</span><span class="mchip">조건 확인 순서</span></div>
+          <div class="run-player" data-lesson="4"><video src="../videos/hamster/lesson4.mp4" poster="../videos/hamster/poster4.jpg" controls muted playsinline preload="none"></video></div>
+          <p class="run-player-cap">🎬 학생 주행 영상 — 거리에 따라 LED 색이 바뀝니다!</p>
+          <details class="code-fold"><summary>💻 4차시 미션 코드 보기</summary><div class="blocks"><div class="blk hat"><span class="b-drop">4차시 기본</span><span>(이)가 눌린 적이 있는가?</span><span>일 때</span></div><div class="blk fl"><span>계속 반복하기</span></div><div class="cbody fl-spine"><div class="blk fl"><span>만약</span><span class="hx hx-b"><span class="b-tag">햄스터S 0</span><span class="b-drop">왼쪽</span><span>근접 센서의 값(%)</span><span class="b-drop">&gt;</span><span class="b-pill">50</span><span>%?</span></span><span>(이)라면</span></div><div class="cbody fl-spine"><div class="blk led"><span class="b-tag">햄스터S 0</span><span class="b-drop">모든</span><span>LED를</span><span class="b-sw" style="background:#ff3b30"></span><span>으로 켜기</span></div><div class="blk snd"><span class="b-tag">햄스터S 0</span><span>비프음 한 번 재생하기</span><span class="b-sub">⏱ 기다리기</span></div></div><div class="blk fl"><span>혹은</span><span class="hx hx-b"><span class="b-tag">햄스터S 0</span><span class="b-drop">왼쪽</span><span>근접 센서의 값(%)</span><span class="b-drop">&gt;</span><span class="b-pill">20</span><span>%?</span></span><span>(이)라면</span></div><div class="cbody fl-spine"><div class="blk led"><span class="b-tag">햄스터S 0</span><span class="b-drop">모든</span><span>LED를</span><span class="b-sw" style="background:#ffd21f"></span><span>으로 켜기</span></div></div><div class="blk fl"><span>아니면</span></div><div class="cbody fl-spine"><div class="blk led"><span class="b-tag">햄스터S 0</span><span class="b-drop">모든</span><span>LED를</span><span class="b-sw" style="background:#2ecc40"></span><span>으로 켜기</span></div></div><div class="cend fl-end"></div></div><div class="cend fl-end"></div></div></details>
+        </div>
+        <div class="track-box"><svg viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><rect x="30" y="74" width="90" height="42" rx="6" fill="#2fa87722"/>
+<rect x="120" y="74" width="70" height="42" rx="6" fill="#e8c23a33"/>
+<rect x="190" y="74" width="56" height="42" rx="6" fill="#e2564a22"/>
+<text x="75" y="98" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#1f8f68">멀다·초록</text>
+<text x="155" y="98" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#b08908">가깝다·노랑</text>
+<text x="218" y="98" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#c13a2e">빨강+삐</text>
+<rect x="250" y="60" width="26" height="70" rx="5" fill="#3a4454"/>
+<g font-family="sans-serif" font-size="10" fill="#7c8698">
+<text x="122" y="64" text-anchor="middle">기준값 ①</text><text x="192" y="64" text-anchor="middle">기준값 ②</text></g>
+<g stroke="#99a3b4" stroke-width="2"><line x1="120" y1="70" x2="120" y2="120"/><line x1="190" y1="70" x2="190" y2="120"/></g>
+<text x="150" y="160" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="#3a4454">기준값 2개 → 거리 3단계 경보</text></svg></div>
+      </article>
+      <article class="mission-card">
+        <div class="mc-rail"><span class="mc-no">05</span><span class="mc-line"></span></div>
+        <div class="mc-body">
+          <p class="mc-lesson">5차시</p>
+          <h3>장애물 비켜 돌기</h3>
+          <p class="mc-mission">🎯 미션 — 컵 3개를 모두 피하라</p>
+          <p class="mc-desc">컵을 감지하면 멈추고, 90도 회전과 직진을 조합해 컵을 비켜 돌아 원래 길로 복귀합니다.<br>
+도전 미션은 [감지→멈춤→비켜 돌기]를 3번 반복해 컵 3개를 모두 통과하기.</p>
+          <div class="mc-chips"><span class="mchip">동작 조합 설계</span><span class="mchip">( )번 반복하기</span><span class="mchip">감지 후 우회</span></div>
+          <div class="run-player" data-lesson="5"><video src="../videos/hamster/lesson5.mp4" poster="../videos/hamster/poster5.jpg" controls muted playsinline preload="none"></video></div>
+          <p class="run-player-cap">🎬 학생 주행 영상 — 장애물을 ㄷ자로 돌아서 통과!</p>
+          <details class="code-fold"><summary>💻 5차시 미션 코드 보기</summary><div class="blocks"><div class="blk hat"><span class="b-drop">5차시 기본</span><span>(이)가 눌린 적이 있는가?</span><span>일 때</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>동작 속도를</span><span class="b-pill">50</span><span>%로 정하기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">앞</span><span>(으)로 동작하기</span></div><div class="blk fl"><span class="hx hx-g"><span class="hx hx-b"><span class="b-tag">햄스터S 0</span><span class="b-drop">왼쪽</span><span>근접 센서의 값(%)</span><span class="b-drop">&gt;</span><span class="b-pill">70</span><span>%?</span></span><span class="b-drop">또는</span><span class="hx hx-b"><span class="b-tag">햄스터S 0</span><span class="b-drop">오른쪽</span><span>근접 센서의 값(%)</span><span class="b-drop">&gt;</span><span class="b-pill">70</span><span>%?</span></span></span><span>일 때까지 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>동작 멈추기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">반시계방향</span><span>으로</span><span class="b-pill">90</span><span>도 만큼 회전하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">앞</span><span>(으)로</span><span class="b-pill">2</span><span class="b-drop">초</span><span>만큼 동작하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">시계방향</span><span>으로</span><span class="b-pill">90</span><span>도 만큼 회전하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">앞</span><span>(으)로</span><span class="b-pill">4.2</span><span class="b-drop">초</span><span>만큼 동작하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">시계방향</span><span>으로</span><span class="b-pill">90</span><span>도 만큼 회전하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">앞</span><span>(으)로</span><span class="b-pill">2</span><span class="b-drop">초</span><span>만큼 동작하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">반시계방향</span><span>으로</span><span class="b-pill">90</span><span>도 만큼 회전하기</span><span class="b-sub">⏱ 기다리기</span></div></div></details>
+        </div>
+        <div class="track-box"><svg viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><rect x="8" y="80" width="50" height="30" rx="5" fill="#ffffff" stroke="#3a4454" stroke-width="2"/><text x="33.0" y="98.96" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#3a4454">START</text>
+<path d="M 58 95 H 268" stroke="#3a4454" stroke-width="4" fill="none"/>
+<circle cx="105" cy="95" r="13" fill="#fff" stroke="#3a4454" stroke-width="2.5"/><path d="M 71 95 H 85 M 85 95 Q 87 62 105 62 Q 123 62 125 95" stroke="#e8971e" stroke-width="3" fill="none" stroke-dasharray="5 5"/><circle cx="170" cy="95" r="13" fill="#fff" stroke="#3a4454" stroke-width="2.5"/><path d="M 136 95 H 150 M 150 95 Q 152 62 170 62 Q 188 62 190 95" stroke="#e8971e" stroke-width="3" fill="none" stroke-dasharray="5 5"/><circle cx="235" cy="95" r="13" fill="#fff" stroke="#3a4454" stroke-width="2.5"/><path d="M 201 95 H 215 M 215 95 Q 217 62 235 62 Q 253 62 255 95" stroke="#e8971e" stroke-width="3" fill="none" stroke-dasharray="5 5"/>
+<g font-family="sans-serif" font-size="11" font-weight="800" fill="#3a4454">
+<text x="105" y="99" text-anchor="middle">①</text><text x="170" y="99" text-anchor="middle">②</text><text x="235" y="99" text-anchor="middle">③</text></g>
+<rect x="252" y="126" width="42" height="28" rx="5" fill="#fff" stroke="#e8971e" stroke-width="2"/><text x="273.0" y="143.96" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#e8971e">END</text>
+<text x="150" y="165" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="#3a4454">감지 → 멈춤 → 점선 따라 비켜 돌기 ×3</text></svg></div>
+      </article>
+      <article class="mission-card">
+        <div class="mc-rail"><span class="mc-no">06</span><span class="mc-line"></span></div>
+        <div class="mc-body">
+          <p class="mc-lesson">6차시</p>
+          <h3>UI로 로봇 조종하기</h3>
+          <p class="mc-mission">🎯 미션 — 버튼 4개 리모컨 운전</p>
+          <p class="mc-desc">UI 디자이너로 앞으로·왼쪽·오른쪽·멈춤 버튼을 만들고, 도로를 벗어나지 않게 직접 운전해 END까지 갑니다.<br>
+도전 미션은 장애물이 가까우면 빨개지는 화면 경고등.</p>
+          <div class="mc-chips"><span class="mchip">이벤트(버튼)</span><span class="mchip">화면 버튼 = 입력 장치</span><span class="mchip">화면 아이콘 = 출력 장치</span></div>
+          <div class="run-player" data-lesson="6"><video src="../videos/hamster/lesson6.mp4" poster="../videos/hamster/poster6.jpg" controls muted playsinline preload="none"></video></div>
+          <p class="run-player-cap">🎬 학생 주행 영상 — 버튼 리모컨으로 S자 코스 조종!</p>
+          <details class="code-fold"><summary>💻 6차시 미션 코드 보기</summary><div class="blocks"><div class="bstack"><div class="blk hat"><span class="b-drop">앞으로</span><span>(이)가 눌린 적이 있는가?</span><span>일 때</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-pill">40</span><span>%,</span><span class="b-pill">40</span><span>%의 속도로 동작하기</span></div></div><div class="bstack"><div class="blk hat"><span class="b-drop">왼쪽</span><span>(이)가 눌린 적이 있는가?</span><span>일 때</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-pill">15</span><span>%,</span><span class="b-pill">40</span><span>%의 속도로 동작하기</span></div></div><div class="bstack"><div class="blk hat"><span class="b-drop">오른쪽</span><span>(이)가 눌린 적이 있는가?</span><span>일 때</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-pill">40</span><span>%,</span><span class="b-pill">15</span><span>%의 속도로 동작하기</span></div></div><div class="bstack"><div class="blk hat"><span class="b-drop">멈춤</span><span>(이)가 눌린 적이 있는가?</span><span>일 때</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>동작 멈추기</span></div></div></div></details>
+        </div>
+        <div class="track-box"><svg viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><path d="M 40 160 H 170 Q 215 160 215 115 Q 215 70 170 70 H 120 Q 85 70 85 40" stroke="#d6dce6" stroke-width="34" fill="none" stroke-linecap="round"/>
+<path d="M 40 160 H 170 Q 215 160 215 115 Q 215 70 170 70 H 120 Q 85 70 85 40" stroke="#aab4c4" stroke-width="3" fill="none" stroke-dasharray="7 8"/>
+<rect x="18" y="146" width="46" height="28" rx="5" fill="#ffffff" stroke="#3a4454" stroke-width="2"/><text x="41.0" y="163.96" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#3a4454">START</text>
+<rect x="62" y="12" width="46" height="28" rx="5" fill="#fff" stroke="#e8971e" stroke-width="2"/><text x="85.0" y="29.96" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#e8971e">END</text>
+<g transform="translate(236,120)">
+<rect x="0" y="0" width="58" height="62" rx="10" fill="#fff" stroke="#3a4454" stroke-width="2"/>
+<rect x="19" y="7" width="20" height="13" rx="4" fill="#e8971e"/><rect x="5" y="24" width="20" height="13" rx="4" fill="#c2cad6"/>
+<rect x="33" y="24" width="20" height="13" rx="4" fill="#c2cad6"/><rect x="19" y="42" width="20" height="13" rx="4" fill="#e2564a"/>
+</g>
+<text x="265" y="104" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="700" fill="#7c8698">버튼 리모컨</text></svg></div>
+      </article>
+      <article class="mission-card">
+        <div class="mc-rail"><span class="mc-no">07</span><span class="mc-line"></span></div>
+        <div class="mc-body">
+          <p class="mc-lesson">7차시</p>
+          <h3>선 세기와 주차</h3>
+          <p class="mc-mission">🎯 미션 — ⑤번 선에서 멈춰라</p>
+          <p class="mc-desc">바닥 센서로 선을 지날 때마다 변수에 1씩 더하고, 5번째 선에서 정지합니다.<br>
+한 선을 두 번 세지 않는 처리가 핵심.<br>
+도전 미션은 180도 돌아와 P 자리에 주차하기.</p>
+          <div class="mc-chips"><span class="mchip">바닥 센서</span><span class="mchip">변수로 개수 세기</span><span class="mchip">중복 감지 방지</span></div>
+          <div class="run-player" data-lesson="7"><video src="../videos/hamster/lesson7.mp4" poster="../videos/hamster/poster7.jpg" controls muted playsinline preload="none"></video></div>
+          <p class="run-player-cap">🎬 학생 주행 영상 — 선 5개를 세고 정확히 멈춥니다!</p>
+          <details class="code-fold"><summary>💻 7차시 미션 코드 보기</summary><div class="blocks"><div class="blk hat"><span class="b-drop">7차시 기본</span><span>(이)가 눌린 적이 있는가?</span><span>일 때</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>동작 속도를</span><span class="b-pill">30</span><span>%로 정하기</span></div><div class="blk var"><span>변수</span><span class="b-drop">선 개수</span><span>의 값을</span><span class="b-pill">0</span><span>(으)로 정하기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">앞</span><span>(으)로 동작하기</span></div><div class="blk fl"><span>변수</span><span class="b-drop">선 개수</span><span>의 값</span><span class="b-drop">&lt;</span><span class="b-pill">5</span><span>인 동안 반복하기</span></div><div class="cbody fl-spine"><div class="blk fl"><span class="hx hx-b"><span class="b-tag">햄스터S 0</span><span class="b-drop">왼쪽</span><span>바닥 센서의 값(%)</span><span class="b-drop">&lt;</span><span class="b-pill">50</span><span>%?</span></span><span>일 때까지 기다리기</span></div><div class="blk var"><span>변수</span><span class="b-drop">선 개수</span><span>의 값을</span><span class="b-pill">1</span><span>만큼 바꾸기</span></div><div class="blk snd"><span class="b-tag">햄스터S 0</span><span>비프음 한 번 재생하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk fl"><span class="hx hx-b"><span class="b-tag">햄스터S 0</span><span class="b-drop">왼쪽</span><span>바닥 센서의 값(%)</span><span class="b-drop">&gt;</span><span class="b-pill">50</span><span>%?</span></span><span>일 때까지 기다리기</span></div></div><div class="cend fl-end"></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>동작 멈추기</span></div><div class="blk led"><span class="b-tag">햄스터S 0</span><span class="b-drop">모든</span><span>LED를</span><span class="b-sw" style="background:#ff3b30"></span><span>으로 켜기</span></div></div></details>
+        </div>
+        <div class="track-box"><svg viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><path d="M 20 95 H 280" stroke="#aab4c4" stroke-width="3" fill="none"/>
+<g stroke="#3a4454" stroke-width="7"><line x1="70" y1="62" x2="70" y2="128"/><line x1="112" y1="62" x2="112" y2="128"/><line x1="154" y1="62" x2="154" y2="128"/><line x1="196" y1="62" x2="196" y2="128"/><line x1="238" y1="62" x2="238" y2="128"/></g>
+<g font-family="sans-serif" font-size="11" font-weight="800" fill="#3a4454">
+<text x="70" y="50" text-anchor="middle">①</text><text x="112" y="50" text-anchor="middle">②</text><text x="154" y="50" text-anchor="middle">③</text><text x="196" y="50" text-anchor="middle">④</text><text x="238" y="50" text-anchor="middle">⑤</text></g>
+<rect x="6" y="80" width="44" height="28" rx="5" fill="#ffffff" stroke="#3a4454" stroke-width="2"/><text x="28.0" y="97.96" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#3a4454">START</text>
+<circle cx="112" cy="148" r="13" fill="#fff" stroke="#e8971e" stroke-width="2.5"/>
+<text x="112" y="152" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="900" fill="#e8971e">P</text>
+<text x="262" y="148" font-family="sans-serif" font-size="10" fill="#7c8698">180°↩</text>
+<text x="150" y="180" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="#3a4454">선을 세며 ⑤에서 멈추고, 돌아와 P에 주차</text></svg></div>
+      </article>
+      <article class="mission-card">
+        <div class="mc-rail"><span class="mc-no">08</span><span class="mc-line"></span></div>
+        <div class="mc-body">
+          <p class="mc-lesson">8차시</p>
+          <h3>라인트레이싱</h3>
+          <p class="mc-mission">🎯 미션 — 장애물 앞에 서는 자율주행 셔틀</p>
+          <p class="mc-desc">왼쪽 센서로 선의 가장자리를 지그재그로 따라가는 라인트레이싱!<br>
+선을 따라 달리다 장애물 앞에서 멈추고, 도전 미션에서는 장애물을 치우면 다시 출발합니다.</p>
+          <div class="mc-chips"><span class="mchip">라인트레이싱 원리</span><span class="mchip">센서 2개 조합</span><span class="mchip">조건 + 반복</span></div>
+          <div class="run-player" data-lesson="8"><video src="../videos/hamster/lesson8.mp4" poster="../videos/hamster/poster8.jpg" controls muted playsinline preload="none"></video></div>
+          <p class="run-player-cap">🎬 학생 주행 영상 — 검은 선을 따라 트랙 한 바퀴!</p>
+          <details class="code-fold"><summary>💻 8차시 미션 코드 보기</summary><div class="blocks"><div class="blk hat"><span class="b-drop">8차시 기본</span><span>(이)가 눌린 적이 있는가?</span><span>일 때</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>라인트레이싱 속도를</span><span class="b-pill">10</span><span>(으)로 정하기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>라인트레이싱 회전율</span><span class="b-pill">10</span><span>(으)로 정하기</span></div><div class="blk led"><span class="b-tag">햄스터S 0</span><span class="b-drop">모든</span><span>LED를</span><span class="b-sw" style="background:#2ecc40"></span><span>으로 켜기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>동작 속도를</span><span class="b-pill">40</span><span>%로 정하기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">왼쪽</span><span>센서로</span><span class="b-drop">검은색</span><span>라인을 따라 라인트레이싱 시작하기</span></div><div class="blk fl"><span class="hx hx-g"><span class="hx hx-b"><span class="b-tag">햄스터S 0</span><span class="b-drop">왼쪽</span><span>근접 센서의 값(%)</span><span class="b-drop">&gt;</span><span class="b-pill">70</span><span>%?</span></span><span class="b-drop">또는</span><span class="hx hx-b"><span class="b-tag">햄스터S 0</span><span class="b-drop">오른쪽</span><span>근접 센서의 값(%)</span><span class="b-drop">&gt;</span><span class="b-pill">70</span><span>%?</span></span></span><span>일 때까지 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>동작 멈추기</span></div><div class="blk led"><span class="b-tag">햄스터S 0</span><span class="b-drop">모든</span><span>LED를</span><span class="b-sw" style="background:#ff3b30"></span><span>으로 켜기</span></div><div class="blk snd"><span class="b-tag">햄스터S 0</span><span>비프음 한 번 재생하기</span><span class="b-sub">⏱ 기다리기</span></div></div></details>
+        </div>
+        <div class="track-box"><svg viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><path d="M 60 50 H 210 Q 262 50 262 97 Q 262 145 210 145 H 90 Q 55 145 45 118 Q 36 95 50 78 Q 60 64 60 50 Z" stroke="#3a4454" stroke-width="5" fill="none"/>
+<rect x="96" y="36" width="50" height="26" rx="5" fill="#ffffff" stroke="#3a4454" stroke-width="2"/><text x="121.0" y="52.96" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#3a4454">START</text>
+<circle cx="262" cy="97" r="11" fill="#fff" stroke="#e8971e" stroke-width="2.5"/>
+<text x="262" y="101" text-anchor="middle" font-family="sans-serif" font-size="10" font-weight="800" fill="#e8971e">컵</text>
+<text x="30" y="162" font-family="sans-serif" font-size="10" fill="#7c8698">급커브</text>
+<text x="150" y="178" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="700" fill="#3a4454">선의 가장자리를 지그재그로 따라간다</text></svg></div>
+      </article>
+      <article class="mission-card">
+        <div class="mc-rail"><span class="mc-no">09</span><span class="mc-line"></span></div>
+        <div class="mc-body">
+          <p class="mc-lesson">9차시</p>
+          <h3>정류장 로봇</h3>
+          <p class="mc-mission">🎯 미션 — 정류장마다 서는 버스</p>
+          <p class="mc-desc">선 위의 넓은 정지선은 양쪽 바닥 센서가 '모두' 검정일 때.<br>
+정류장마다 멈춰 비프음을 내고, 정지선을 벗어난 뒤 다시 달립니다.<br>
+도전 미션은 정류장 ③에서 운행 종료.</p>
+          <div class="mc-chips"><span class="mchip">그리고(AND) 조건</span><span class="mchip">선 vs 정지선 구분</span><span class="mchip">벗어나기 처리</span></div>
+          <div class="run-player" data-lesson="9"><video src="../videos/hamster/lesson9.mp4" poster="../videos/hamster/poster9.jpg" controls muted playsinline preload="none"></video></div>
+          <p class="run-player-cap">🎬 학생 주행 영상 — 정류장마다 멈췄다 다시 출발!</p>
+          <details class="code-fold"><summary>💻 9차시 미션 코드 보기</summary><div class="blocks"><div class="blk hat"><span class="b-drop">9차시 기본</span><span>(이)가 눌린 적이 있는가?</span><span>일 때</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>동작 속도를</span><span class="b-pill">30</span><span>%로 정하기</span></div><div class="blk fl"><span>계속 반복하기</span></div><div class="cbody fl-spine"><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">앞</span><span>(으)로</span><span class="b-pill">1</span><span class="b-drop">초</span><span>만큼 동작하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span class="b-drop">왼쪽</span><span>센서로</span><span class="b-drop">검은색</span><span>라인을 따라 라인트레이싱 시작하기</span></div><div class="blk fl"><span class="hx hx-g"><span class="hx hx-b"><span class="b-tag">햄스터S 0</span><span class="b-drop">왼쪽</span><span>바닥 센서의 값(%)</span><span class="b-drop">&lt;</span><span class="b-pill">30</span><span>%?</span></span><span class="b-drop">그리고</span><span class="hx hx-b"><span class="b-tag">햄스터S 0</span><span class="b-drop">오른쪽</span><span>바닥 센서의 값(%)</span><span class="b-drop">&lt;</span><span class="b-pill">30</span><span>%?</span></span></span><span>일 때까지 기다리기</span></div><div class="blk mv"><span class="b-tag">햄스터S 0</span><span>동작 멈추기</span></div><div class="blk snd"><span class="b-tag">햄스터S 0</span><span>비프음 한 번 재생하기</span><span class="b-sub">⏱ 기다리기</span></div><div class="blk fl"><span class="b-pill">1</span><span>초 기다리기</span></div></div><div class="cend fl-end"></div></div></details>
+        </div>
+        <div class="track-box"><svg viewBox="0 0 300 190" xmlns="http://www.w3.org/2000/svg"><rect x="40" y="48" width="220" height="96" rx="48" stroke="#3a4454" stroke-width="5" fill="none"/>
+<g fill="#3a4454">
+<rect x="130" y="38" width="40" height="18" rx="3"/>
+<rect x="246" y="76" width="18" height="40" rx="3"/>
+<rect x="130" y="136" width="40" height="18" rx="3"/>
+</g>
+<g font-family="sans-serif" font-size="11" font-weight="800" fill="#e8971e">
+<text x="150" y="30" text-anchor="middle">정류장 ①</text><text x="252" y="66" text-anchor="end">②</text><text x="150" y="172" text-anchor="middle">③</text></g>
+<rect x="44" y="82" width="52" height="26" rx="5" fill="#ffffff" stroke="#3a4454" stroke-width="2"/><text x="70.0" y="98.96" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="800" fill="#3a4454">START</text></svg></div>
+      </article>
+      
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>삼선중학교 AI 중점학교 · 온라인 산출물 전시관</p>
+      <p>본 사이트의 작품 저작권은 각 학생에게 있습니다.</p>
+    </div>
+  </footer>
+
+<script>
+/* ===== main.js (인라인 내장) ===== */
+// 모바일 내비게이션 토글
+(function () {
+  const btn = document.querySelector(".nav-toggle");
+  const gnb = document.getElementById("gnb");
+  if (!btn || !gnb) return;
+
+  btn.addEventListener("click", () => {
+    const open = gnb.classList.toggle("open");
+    btn.setAttribute("aria-expanded", String(open));
+  });
+})();
+
+
+// 스크롤 리빌 — 대상 요소에 자동으로 클래스 부여 후 등장 감지
+(function () {
+
+  const targets = document.querySelectorAll(
+    ".floor-head, .room, .about-band h2, .about-band p, " +
+    ".section h2, .work-card, .photo-grid figure, .embed-card, .page-hero .container > *, .mission-card, .anatomy-grid > *, .ipo-strip > *"
+  );
+  if (!("IntersectionObserver" in window) || targets.length === 0) return;
+
+  targets.forEach((t) => t.classList.add("reveal"));
+
+  // 형제끼리는 순차 등장 (최대 5단계 시차)
+  const groups = new Map();
+  targets.forEach((t) => {
+    const key = t.parentElement;
+    const n = groups.get(key) || 0;
+    t.style.setProperty("--reveal-delay", `${Math.min(n, 5) * 0.08}s`);
+    groups.set(key, n + 1);
+  });
+
+  const io = new IntersectionObserver((es) => {
+    es.forEach((e) => {
+      if (e.isIntersecting) {
+        e.target.classList.add("in");
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  targets.forEach((t) => io.observe(t));
+})();
+
+// 헤더 그림자
+(function () {
+  const header = document.querySelector(".site-header");
+  if (!header) return;
+  const onScroll = () => header.classList.toggle("scrolled", window.scrollY > 8);
+  onScroll();
+  window.addEventListener("scroll", onScroll, { passive: true });
+})();
+
+
+// 히어로: 강조 단어 순환 (게임 → 건축물 → 로봇 → AI 작품)
+(function () {
+  const el = document.getElementById("cycleWord");
+  if (!el) return;
+
+  const words = [
+    ["게임", "var(--room-game)"],
+    ["건축물", "var(--room-mine)"],
+    ["로봇", "var(--room-ham)"],
+    ["AI 작품", "var(--room-ai)"],
+  ];
+  let i = 0;
+
+  const setWord = () => {
+    el.textContent = words[i][0];
+    el.style.setProperty("--cycle-color", words[i][1]);
+  };
+  setWord();
+
+  setInterval(() => {
+    el.classList.add("swap");
+    setTimeout(() => {
+      i = (i + 1) % words.length;
+      setWord();
+      el.classList.remove("swap");
+    }, 360);
+  }, 2400);
+})();
+
+// 떠다니는 배경 도형 — 물리 시뮬레이션 (상호 충돌 + 마우스 타격)
+(function () {
+  const colors = [
+    "var(--room-game)", "var(--room-mine)", "var(--room-phys)",
+    "var(--room-code)", "var(--room-ham)", "var(--room-ai)",
+  ];
+  const shapes = [
+    "fs-square", "fs-circle", "fs-triangle", "fs-plus", "fs-ring",
+    "fs-diamond", "fs-star", "fs-hexagon", "fs-pill",
+  ];
+
+  // [left%, top%, size, 회전주기(s), 방향, 도형, 색번호]
+  const FIELDS = {
+    hero: [
+      [5, 14, 26, 22, 1, 0, 0],  [13, 70, 18, 30, -1, 1, 1],
+      [29, 9, 15, 18, 1, 2, 2],  [45, 80, 22, 26, -1, 3, 3],
+      [57, 7, 16, 34, 1, 4, 4],  [71, 64, 30, 24, 1, 0, 5],
+      [84, 20, 18, 20, -1, 2, 0],[92, 72, 24, 28, 1, 1, 2],
+      [23, 42, 11, 16, -1, 3, 4],[66, 34, 12, 21, 1, 4, 5],
+      [9, 44, 14, 36, -1, 2, 3], [38, 26, 20, 27, 1, 4, 1],
+      [52, 58, 13, 19, -1, 3, 0],[78, 44, 15, 31, 1, 1, 5],
+      [96, 40, 12, 23, -1, 0, 4],[34, 90, 16, 25, 1, 2, 5],
+      [18, 22, 13, 24, 1, 5, 2], [62, 18, 17, 29, -1, 6, 0],
+      [88, 52, 14, 21, 1, 7, 3], [42, 66, 19, 33, -1, 8, 1],
+      [7, 82, 12, 17, 1, 6, 4],  [27, 58, 16, 26, -1, 7, 5],
+      [73, 82, 13, 22, 1, 5, 0], [94, 10, 15, 28, -1, 8, 2],
+      [49, 36, 10, 15, 1, 6, 3], [33, 8, 12, 20, -1, 5, 4],
+    ],
+    floor: [
+      [3, 10, 18, 26, 1, 1, 0],  [96, 14, 22, 30, -1, 0, 2],
+      [2, 62, 14, 20, -1, 3, 4], [97, 66, 16, 24, 1, 2, 1],
+      [8, 90, 20, 28, 1, 4, 5],  [92, 92, 13, 18, -1, 2, 3],
+      [50, 3, 15, 32, -1, 0, 5], [30, 95, 12, 22, 1, 1, 4],
+      [5, 35, 15, 23, 1, 6, 5],  [95, 40, 13, 27, -1, 5, 3],
+      [12, 8, 12, 19, 1, 7, 1],  [88, 8, 14, 25, -1, 8, 0],
+      [20, 80, 13, 21, 1, 5, 2], [80, 85, 15, 29, -1, 6, 4],
+    ],
+  };
+
+  // 화면 폭에 비례한 배율 (1440px 기준, 최대 1.7배)
+  const k = Math.min(1.7, Math.max(1, window.innerWidth / 1440));
+  const worlds = [];
+
+  document.querySelectorAll(".float-field").forEach((layer) => {
+    const spots = FIELDS[layer.dataset.float];
+    if (!spots) return;
+    const host = layer.parentElement || layer;
+
+    const parts = spots.map(([l, t, s0, spin, dir, shape, ci]) => {
+      const size = Math.round(s0 * k);
+      const el = document.createElement("span");
+      el.className = shapes[shape] + " phys";
+      el.style.width = size + "px";
+      el.style.height = size + "px";
+      if (shapes[shape] === "fs-ring") {
+        el.style.setProperty("--ring-color", colors[ci]);
+        el.style.borderWidth = Math.max(3, Math.round(size / 6)) + "px";
+      } else {
+        el.style.background = colors[ci];
+      }
+      layer.appendChild(el);
+      const a = Math.random() * Math.PI * 2;
+      return {
+        el, lp: l / 100, tp: t / 100,
+        r: size / 2, m: size * size,
+        x: 0, y: 0, hx: 0, hy: 0,
+        vx: Math.cos(a) * 14, vy: Math.sin(a) * 14,
+        ang: Math.random() * 360,
+        baseAv: (360 / spin) * dir,   // deg/s
+        extraAv: 0,
+        glow: 0,
+      };
+    });
+
+    const w = {
+      layer, host, parts, W: 0, H: 0,
+      mx: -1e4, my: -1e4, mvx: 0, mvy: 0, mt: 0,
+    };
+
+    w.measure = () => {
+      w.W = layer.offsetWidth;
+      w.H = layer.offsetHeight;
+      parts.forEach((p) => {
+        p.hx = p.lp * w.W;
+        p.hy = p.tp * w.H;
+        if (p.x === 0 && p.y === 0) { p.x = p.hx; p.y = p.hy; }
+        p.x = Math.min(Math.max(p.x, p.r), w.W - p.r);
+        p.y = Math.min(Math.max(p.y, p.r), w.H - p.r);
+      });
+    };
+    w.measure();
+    window.addEventListener("resize", w.measure);
+
+    host.addEventListener("pointermove", (e) => {
+      const rc = layer.getBoundingClientRect();
+      const nx = e.clientX - rc.left, ny = e.clientY - rc.top;
+      const now = performance.now();
+      if (w.mt) {
+        const dt = Math.max(0.008, (now - w.mt) / 1000);
+        w.mvx = (nx - w.mx) / dt;
+        w.mvy = (ny - w.my) / dt;
+      }
+      w.mx = nx; w.my = ny; w.mt = now;
+    });
+    host.addEventListener("pointerleave", () => {
+      w.mx = -1e4; w.my = -1e4; w.mvx = 0; w.mvy = 0; w.mt = 0;
+    });
+
+    worlds.push(w);
+  });
+
+  if (worlds.length === 0) return;
+
+  const MOUSE_R = 52;       // 마우스 충돌 반경
+  const REST = 0.92;        // 도형끼리 반발 계수
+  const WALL_REST = 0.78;   // 벽 반발 계수
+
+  let last = performance.now();
+
+  function step(now) {
+    let dt = (now - last) / 1000;
+    last = now;
+    if (dt <= 0 || dt > 0.08) dt = 0.016;
+
+    worlds.forEach((w) => {
+      const ps = w.parts;
+      const drag = Math.exp(-0.85 * dt);
+      const avDecay = Math.exp(-1.6 * dt);
+      const glowDecay = Math.exp(-2.6 * dt);
+      const mSpeed = Math.min(2200, Math.hypot(w.mvx, w.mvy));
+
+      // ----- 개별 운동 -----
+      for (const p of ps) {
+        // 홈 위치로 아주 약하게 복귀 + 무작위 흔들림
+        p.vx += (p.hx - p.x) * 0.22 * dt + (Math.random() - 0.5) * 26 * dt;
+        p.vy += (p.hy - p.y) * 0.22 * dt + (Math.random() - 0.5) * 26 * dt;
+        p.vx *= drag; p.vy *= drag;
+
+        // 마우스 타격: 커서 반경과 겹치면 커서 속도만큼 튕겨 나감
+        const mdx = p.x - w.mx, mdy = p.y - w.my;
+        const md = Math.hypot(mdx, mdy);
+        const minD = p.r + MOUSE_R;
+        if (md < minD && md > 0.001) {
+          const nx = mdx / md, ny = mdy / md;
+          const push = 240 + mSpeed * 0.75;
+          const vn = p.vx * nx + p.vy * ny;
+          if (vn < push) {
+            p.vx += nx * (push - vn);
+            p.vy += ny * (push - vn);
+          }
+          p.extraAv += (Math.random() - 0.5) * 540;
+          p.glow = 1;
+        }
+
+        // 속도 상한
+        const sp = Math.hypot(p.vx, p.vy);
+        if (sp > 1000) { p.vx *= 1000 / sp; p.vy *= 1000 / sp; }
+      }
+
+      // ----- 도형끼리 충돌 -----
+      for (let i = 0; i < ps.length; i++) {
+        for (let j = i + 1; j < ps.length; j++) {
+          const a = ps[i], b = ps[j];
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.hypot(dx, dy);
+          const minD = a.r + b.r;
+          if (d >= minD || d < 0.001) continue;
+          const nx = dx / d, ny = dy / d;
+
+          // 겹침 분리 (질량 반비례)
+          const overlap = minD - d;
+          const ima = 1 / a.m, imb = 1 / b.m, imSum = ima + imb;
+          a.x -= nx * overlap * (ima / imSum);
+          a.y -= ny * overlap * (ima / imSum);
+          b.x += nx * overlap * (imb / imSum);
+          b.y += ny * overlap * (imb / imSum);
+
+          // 법선 방향 충격량 교환
+          const rvn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+          if (rvn < 0) {
+            const jImp = -(1 + REST) * rvn / imSum;
+            a.vx -= nx * jImp * ima; a.vy -= ny * jImp * ima;
+            b.vx += nx * jImp * imb; b.vy += ny * jImp * imb;
+            const kick = Math.min(360, Math.abs(jImp) * 0.004);
+            a.extraAv -= kick * (Math.random() < 0.5 ? 1 : -1);
+            b.extraAv += kick * (Math.random() < 0.5 ? 1 : -1);
+            if (Math.abs(rvn) > 90) { a.glow = Math.max(a.glow, 0.7); b.glow = Math.max(b.glow, 0.7); }
+          }
+        }
+      }
+
+      // ----- 이동·벽 반사·렌더 -----
+      for (const p of ps) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        if (p.x < p.r)        { p.x = p.r;        p.vx = Math.abs(p.vx) * WALL_REST; }
+        if (p.x > w.W - p.r)  { p.x = w.W - p.r;  p.vx = -Math.abs(p.vx) * WALL_REST; }
+        if (p.y < p.r)        { p.y = p.r;        p.vy = Math.abs(p.vy) * WALL_REST; }
+        if (p.y > w.H - p.r)  { p.y = w.H - p.r;  p.vy = -Math.abs(p.vy) * WALL_REST; }
+
+        p.extraAv *= avDecay;
+        p.ang += (p.baseAv + p.extraAv) * dt;
+        p.glow *= glowDecay;
+
+        p.el.style.transform =
+          "translate(" + (p.x - p.r).toFixed(1) + "px," + (p.y - p.r).toFixed(1) + "px) " +
+          "rotate(" + p.ang.toFixed(1) + "deg)";
+        p.el.style.opacity = (0.22 + p.glow * 0.3).toFixed(2);
+      }
+
+      // 마우스 속도는 매 프레임 감쇠 (멈춘 커서가 계속 밀지 않도록)
+      w.mvx *= 0.8; w.mvy *= 0.8;
+    });
+
+    requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
+})();
+
+// 부드러운 스크롤 자체 엔진 — 브라우저·OS 설정과 무관하게 항상 동작
+window.__smoothScroll = (function () {
+  let rafId = 0;
+  return function (targetY, duration) {
+    if (rafId) cancelAnimationFrame(rafId);
+    const startY = window.scrollY;
+    const dist = targetY - startY;
+    if (Math.abs(dist) < 2) { window.scrollTo(0, targetY); return; }
+    const dur = duration || Math.min(900, 450 + Math.abs(dist) * 0.25);
+    const t0 = performance.now();
+    const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    const frame = (now) => {
+      const t = Math.min(1, (now - t0) / dur);
+      window.scrollTo(0, startY + dist * ease(t));
+      rafId = t < 1 ? requestAnimationFrame(frame) : 0;
+    };
+    rafId = requestAnimationFrame(frame);
+  };
+})();
+
+// 페이지 내 앵커(#) 이동도 자체 엔진으로 — 설정과 무관하게 부드럽게
+(function () {
+  const HEADER = 64;
+  document.querySelectorAll('a[href^="#"]').forEach((a) => {
+    a.addEventListener("click", (e) => {
+      const id = a.getAttribute("href").slice(1);
+      const el = id && document.getElementById(id);
+      if (!el) return;
+      e.preventDefault();
+      const top = el.getBoundingClientRect().top + window.scrollY - HEADER;
+      window.__smoothScroll(top, 750);
+      if (history.pushState) history.pushState(null, "", "#" + id);
+    });
+  });
+})();
+
+// 스크롤 스냅: 히어로 ↔ 전시관 안내 사이는 휠 한 번에 이동
+(function () {
+  const floor = document.getElementById("floor");
+  const hero = document.querySelector(".hero");
+  if (!floor || !hero) return;
+
+  const HEADER = 64;
+  let animating = false;
+
+  const go = (top) => {
+    animating = true;
+    window.__smoothScroll(top, 700);
+    setTimeout(() => { animating = false; }, 780);
+  };
+
+  window.addEventListener("wheel", (e) => {
+    if (animating) { e.preventDefault(); return; }
+    const floorTop = floor.getBoundingClientRect().top + window.scrollY - HEADER;
+    const y = window.scrollY;
+
+    // 히어로 구간에서 아래로 → 전시관 안내로 스냅
+    if (e.deltaY > 0 && y < floorTop - 40) {
+      e.preventDefault();
+      go(floorTop);
+    }
+    // 전시관 안내 상단 근처에서 위로 → 히어로로 스냅
+    else if (e.deltaY < 0 && y > 10 && y <= floorTop + 40) {
+      e.preventDefault();
+      go(0);
+    }
+  }, { passive: false });
+})();
+</script>
+</body>
+</html>

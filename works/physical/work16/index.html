@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 농구 점수판</title>
+<style>
+  :root {
+    --teal: #2ca8a2;
+    --teal-dark: #1e7d78;
+    --ink: #17203a;
+    --ink-soft: #4a5570;
+    --paper: #f6f7f9;
+    --line: #d9dde6;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Pretendard Variable", Pretendard, -apple-system, sans-serif;
+    background: var(--paper);
+    color: var(--ink);
+    line-height: 1.65;
+    word-break: keep-all;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px 56px; }
+
+  /* ---------- 헤더 ---------- */
+  .hero {
+    background: linear-gradient(135deg, var(--teal), var(--teal-dark));
+    color: #fff;
+    padding: 44px 20px 38px;
+    text-align: center;
+  }
+  .hero .tag { font-size: 0.82rem; font-weight: 700; opacity: 0.85; letter-spacing: 0.08em; }
+  .hero h1 { font-size: clamp(1.9rem, 5vw, 2.6rem); font-weight: 900; margin: 6px 0 10px; }
+  .hero p { opacity: 0.94; max-width: 36em; margin: 0 auto; }
+
+  section { margin-top: 44px; }
+  h2 {
+    font-size: 1.25rem;
+    font-weight: 900;
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+    border-bottom: 2px solid var(--teal);
+  }
+  h2 .no { color: var(--teal); margin-right: 6px; }
+
+  /* ---------- 개요 3카드 ---------- */
+  .trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .trio .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px 16px;
+  }
+  .trio .emoji { font-size: 1.6rem; }
+  .trio h3 { font-size: 0.95rem; font-weight: 800; margin: 8px 0 6px; color: var(--teal-dark); }
+  .trio p { font-size: 0.92rem; color: var(--ink-soft); }
+  @media (max-width: 640px) { .trio { grid-template-columns: 1fr; } }
+
+  /* ---------- 시스템 구성 플로우 ---------- */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .flow .node {
+    flex: 1;
+    min-width: 118px;
+    background: #fff;
+    border: 1.5px solid var(--teal);
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .flow .node .ic { font-size: 1.5rem; }
+  .flow .node b { display: block; font-size: 0.92rem; margin-top: 6px; }
+  .flow .node span { display: block; font-size: 0.78rem; color: var(--ink-soft); margin-top: 3px; }
+  .flow .arrow { align-self: center; color: var(--teal); font-weight: 900; font-size: 1.2rem; }
+  @media (max-width: 720px) {
+    .flow { flex-direction: column; }
+    .flow .arrow { transform: rotate(90deg); margin: -2px auto; }
+  }
+
+  /* ---------- AI 모델 현황 ---------- */
+  .model-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 14px; }
+  @media (max-width: 720px) { .model-grid { grid-template-columns: 1fr; } }
+  .stat-cards { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px 12px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .stat .v { font-size: 1.3rem; font-weight: 900; color: var(--teal-dark); }
+  .stat .l { font-size: 0.78rem; color: var(--ink-soft); font-weight: 700; margin-top: 2px; }
+  .bars { background: #fff; border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .bars h3 { font-size: 0.9rem; font-weight: 800; margin-bottom: 12px; }
+  .bar-row { margin-bottom: 12px; }
+  .bar-row .name { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 5px; }
+  .bar-row .name em { font-style: normal; color: var(--ink-soft); font-weight: 600; }
+  .bar-track { height: 14px; background: #edf0f5; border-radius: 999px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 999px; }
+  .note { font-size: 0.8rem; color: var(--ink-soft); margin-top: 8px; }
+
+  /* ---------- 블록 코드 ---------- */
+  .code-note { font-size: 0.88rem; color: var(--ink-soft); margin-bottom: 14px; }
+  .script {
+    background: #eef3fb;
+    border: 1px solid #d7e2f2;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+    overflow-x: auto;
+  }
+  .script h3 { font-size: 0.85rem; font-weight: 800; color: var(--ink-soft); margin-bottom: 10px; }
+  .blk {
+    display: block;
+    width: fit-content;
+    font-size: 0.86rem;
+    font-weight: 700;
+    color: #fff;
+    border-radius: 8px;
+    padding: 7px 13px;
+    margin-top: 5px;
+    white-space: nowrap;
+  }
+  .blk .chip {
+    background: rgba(255, 255, 255, 0.28);
+    border-radius: 999px;
+    padding: 1px 8px;
+    margin: 0 2px;
+    font-weight: 800;
+  }
+  .b-start { background: #f5a623; }
+  .b-loop, .b-if { background: #e8730c; }
+  .b-ai { background: #a06ee0; }
+  .b-dev { background: #2f7de0; }
+  .b-wait { background: #e8730c; }
+  .ind1 { margin-left: 26px; }
+  .ind2 { margin-left: 52px; }
+
+  /* ---------- 영상 ---------- */
+  .video-box { background: #10131c; border-radius: 14px; overflow: hidden; }
+  .video-box video { width: 100%; display: block; }
+  .privacy-note {
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    margin-top: 8px;
+  }
+
+  /* ---------- 제작 이야기 ---------- */
+  .story { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 720px) { .story { grid-template-columns: 1fr; } }
+  .story .card {
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .story h3 { font-size: 0.95rem; font-weight: 800; color: var(--teal-dark); margin-bottom: 8px; }
+  .story p, .story li { font-size: 0.9rem; color: var(--ink-soft); }
+  .story ol { padding-left: 20px; }
+  .story li { margin-bottom: 4px; }
+
+  footer {
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+    margin-top: 48px;
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <p class="tag">피지컬 컴퓨팅 프로젝트 · 학교에 필요한 시스템 만들기</p>
+  <h1>🏀 AI 농구 점수판</h1>
+  <p>라인 밖 슛은 3점, 안쪽 슛은 2점!<br>
+카메라가 슛 위치를 인식하고 버튼 하나로 점수가 자동 합산되는, 경기 흐름을 끊지 않는 자동 점수판입니다.</p>
+</div>
+
+<div class="wrap">
+
+  <section>
+    <h2><span class="no">01</span>왜 만들었나요?</h2>
+    <div class="trio">
+      <div class="card">
+        <div class="emoji">🏀</div>
+        <h3>문제 발견</h3>
+        <p>학교 농구 대회에서 다 같이 경기를 보고 싶은데, 점수와 시간을 조정하느라 경기를 잠깐씩 놓치게 돼요.</p>
+      </div>
+      <div class="card">
+        <div class="emoji">💡</div>
+        <h3>해결 아이디어</h3>
+        <p>라인 밖에서 쏘면 3점, 안에서 쏘면 2점 — 슛 위치를 카메라가 인식해 점수를 자동으로 올려주자!</p>
+      </div>
+      <div class="card">
+        <div class="emoji">🌱</div>
+        <h3>기대 효과</h3>
+        <p>진행자가 수동으로 점수를 올릴 필요가 없어, 경기 흐름이 끊기지 않고 모두가 경기에 집중할 수 있습니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="no">02</span>시스템 구성</h2>
+    <div class="flow">
+      <div class="node"><div class="ic">🔘</div><b>A 버튼</b><span>슛 위치 판정</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="ic">📷</div><b>카메라 + AI</b><span>3점 / 2점 분류</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="ic">🔘</div><b>B 버튼</b><span>득점 확정</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="ic">➕</div><b>점수 합산</b><span>점수 변수에 누적</span></div>
+      <div class="arrow">→</div>
+      <div class="node"><div class="ic">💬</div><b>마이크로비트</b><span>점수 표시 + 소리</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="no">03</span>AI 모델 현황</h2>
+    <div class="model-grid">
+      <div class="stat-cards">
+        <div class="stat"><div class="v">MobileNet</div><div class="l">기반 모델</div></div>
+        <div class="stat"><div class="v">2개</div><div class="l">분류 클래스</div></div>
+        <div class="stat"><div class="v">104장</div><div class="l">총 학습 사진</div></div>
+        <div class="stat"><div class="v">자동</div><div class="l">점수 누적</div></div>
+      </div>
+      <div class="bars">
+        <h3>클래스별 학습 데이터</h3>
+        <div class="bar-row">
+          <div class="name">🎯 3점 (라인 밖) <em>61장</em></div>
+          <div class="bar-track"><div class="bar-fill" style="width: 100%; background: #4a63e7;"></div></div>
+        </div>
+        <div class="bar-row">
+          <div class="name">🏀 2점 (라인 안) <em>43장</em></div>
+          <div class="bar-track"><div class="bar-fill" style="width: 70%; background: #e8971e;"></div></div>
+        </div>
+        <p class="note">코트 라인을 기준으로 슛 위치가 라인 밖인지 안인지 구분하도록, 두 위치에서 찍은 사진 104장을 학습시킨 '점수 확인' 모델입니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="no">04</span>핵심 코드</h2>
+    <p class="code-note">AI이거다 블록 코딩으로 작성한 실제 프로그램을 그대로 옮긴 것입니다.<br>
+A 버튼으로 슛 위치를 판정해 두고, 골이 들어가면 B 버튼 한 번으로 점수가 자동 합산되어 마이크로비트 화면에 흐릅니다.</p>
+    <div class="script">
+      <h3>메인 프로그램 — 슛 판정과 점수 누적</h3>
+      <span class="blk b-start">🔘 <span class="chip">A</span> 버튼이 눌린 적이 있는가? 일 때 (슛 위치 판정)</span>
+      <span class="blk b-ai ind1"><span class="chip">점수 확인</span> 모델의 분류 결과 요청하기</span>
+      <span class="blk b-if ind1">만약 분류 결과가 클래스 <span class="chip">3점</span> 인가? 라면</span>
+      <span class="blk b-dev ind2">변수 <span class="chip">슛</span>의 값을 <span class="chip">3</span>으로 정하기</span>
+      <span class="blk b-if ind1">혹은 분류 결과가 클래스 <span class="chip">2점</span> 인가? 라면</span>
+      <span class="blk b-dev ind2">변수 <span class="chip">슛</span>의 값을 <span class="chip">2</span>로 정하기</span>
+      <span class="blk b-start">🔘 <span class="chip">B</span> 버튼이 눌린 적이 있는가? 일 때 (득점!)</span>
+      <span class="blk b-dev ind1">변수 <span class="chip">점수</span>의 값을 변수 <span class="chip">슛</span>의 값만큼 바꾸기</span>
+      <span class="blk b-dev ind1">소리 <span class="chip">GIGGLE</span> 재생 + 마빗 화면에 <span class="chip">점수</span> 값 이동하며 보여주기</span>
+    </div>
+
+  </section>
+
+  <section>
+    <h2><span class="no">05</span>동작 영상</h2>
+    <div class="video-box">
+      <video controls muted playsinline preload="none" poster="poster.jpg">
+        <source src="demo.mp4" type="video/mp4">
+      </video>
+    </div>
+    <p class="privacy-note">※ 개인정보 보호를 위해 소리를 제거하고 일부 구간만 담은 영상입니다.</p>
+  </section>
+
+  <section>
+    <h2><span class="no">06</span>제작 이야기</h2>
+    <div class="story">
+      <div class="card">
+        <h3>🏀 왜 자동 점수판인가</h3>
+        <p>농구 챔피언스리그가 열리면 모두가 경기를 보고 싶어 합니다.<br>
+하지만 누군가는 점수판 앞을 지켜야 하죠.<br>
+이 팀은 "점수 올리느라 경기를 놓치는 사람"을 없애는 것을 목표로 삼았습니다.</p>
+      </div>
+      <div class="card">
+        <h3>⚙️ 버튼 두 개로 끝나는 운영</h3>
+        <p>슛 순간 A 버튼으로 위치를 판정해 두고, 골이 들어가면 B 버튼만 누르면 끝.<br>
+소리와 함께 합산된 점수가 마이크로비트 화면에 흘러갑니다.<br>
+3점 라인 밖과 안에서 찍은 사진 104장으로 위치 판정 모델을 만들었습니다.</p>
+      </div>
+    </div>
+  </section>
+
+  <footer>삼선중학교 AI 중점학교 · 피지컬 컴퓨팅 프로젝트</footer>
+</div>
+
+</body>
+</html>

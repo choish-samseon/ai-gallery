@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>가위바위보 한판 승부</title>
+<style>
+  :root { --accent: #e2564a; --ink: #232a38; --sub: #4a5468; --line: #e3e8ef; --bg: #f7f8fb; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "Pretendard", "Pretendard Variable", -apple-system, "Malgun Gothic", sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.6; }
+  .hero { background: linear-gradient(135deg, #2b3242, #42313a); color: #fff; padding: 34px 20px 30px; text-align: center; }
+  .hero .tag { display: inline-block; font-size: 0.74rem; font-weight: 800; letter-spacing: 0.1em;
+    background: #ffffff22; border: 1px solid #ffffff44; border-radius: 999px; padding: 4px 12px; margin-bottom: 10px; }
+  .hero h1 { font-size: clamp(1.3rem, 4vw, 1.8rem); font-weight: 900; }
+  .hero p { max-width: 560px; margin: 10px auto 0; font-size: 0.9rem; color: #d9dde6; }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 22px 16px 56px; }
+
+  .term { background: #10151f; border-radius: 14px; overflow: hidden; box-shadow: 0 10px 30px rgba(20,26,40,.25); }
+  .tbar { display: flex; align-items: center; gap: 7px; background: #1c2330; padding: 10px 14px; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #ff5f57; } .dot.y { background: #febc2e; } .dot.g { background: #28c840; }
+  .fname { margin-left: 8px; font-size: 0.78rem; color: #8b96aa; font-weight: 700;
+    font-family: Consolas, "Courier New", monospace; }
+  #rerun { margin-left: auto; background: #2a3344; color: #cdd7e8; border: none; border-radius: 7px;
+    padding: 5px 11px; font-size: 0.76rem; font-weight: 800; cursor: pointer; font-family: inherit; }
+  #rerun:hover { background: #38445c; }
+  .tbody { padding: 16px 16px 8px; min-height: 240px; max-height: 340px; overflow-y: auto;
+    font-family: Consolas, "Courier New", monospace; font-size: 0.86rem; color: #d7e3f4; }
+  .tbody .ln { margin-bottom: 4px; white-space: pre-wrap; word-break: break-all; }
+  .tbody .sys { color: #8b96aa; }
+  .tbody .in { color: #ffd479; }
+  .tbody .com { color: #6db3ff; }
+  .tbody .win { color: #5fd38a; font-weight: 800; }
+  .tbody .lose { color: #ff8d84; font-weight: 700; }
+  .tbody .draw { color: #e8c86a; font-weight: 700; }
+  .tbody .score { color: #fff; font-weight: 800; }
+  .tin { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 16px 14px; }
+  .hbtn { flex: 1; min-width: 86px; background: #1c2330; border: 1px solid #323d52; border-radius: 10px;
+    color: #fff; font-family: inherit; font-size: 0.92rem; font-weight: 800; padding: 10px 6px; cursor: pointer; }
+  .hbtn:hover { border-color: var(--accent); background: #242e40; }
+  .hbtn.quit { flex: 0 0 auto; min-width: 72px; color: #ff8d84; }
+  .hbtn:disabled { opacity: 0.4; cursor: default; }
+
+  .codesec { margin-top: 34px; }
+  .codesec h2 { font-size: 1.1rem; font-weight: 900; display: flex; align-items: center; gap: 8px; }
+  .codesec .lead { color: var(--sub); font-size: 0.86rem; margin-top: 6px; }
+  pre { margin-top: 14px; background: #232a38; color: #e8edf6; border-radius: 12px; padding: 18px;
+    font-family: Consolas, "Courier New", monospace; font-size: 0.82rem; line-height: 1.7; overflow-x: auto; }
+  pre .k { color: #c792ea; } pre .f { color: #82aaff; } pre .s { color: #c3e88d; } pre .n { color: #f78c6c; } pre .c { color: #7a8699; }
+  .pts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; }
+  @media (max-width: 640px) { .pts { grid-template-columns: 1fr; } }
+  .pt { background: #fff; border: 1px solid var(--line); border-left: 4px solid var(--accent);
+    border-radius: 11px; padding: 13px 15px; }
+  .pt b { font-size: 0.86rem; display: block; margin-bottom: 4px; }
+  .pt p { font-size: 0.79rem; color: var(--sub); }
+  .pt code { background: #f2f4f8; border-radius: 5px; padding: 1px 6px; font-size: 0.76rem; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <p class="tag">코드설계소 · 파이썬 첫 프로젝트</p>
+  <h1>✌️ 가위바위보 한판 승부</h1>
+  <p>컴퓨터와 가위바위보 대결!<br>
+'그만'을 누를 때까지 전적이 쌓입니다. 과연 컴퓨터를 이길 수 있을까요?</p>
+</div>
+
+<div class="wrap">
+  <div class="term">
+    <div class="tbar">
+      <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+      <span class="fname">rsp.py — Python 3</span>
+      <button id="rerun">↻ 다시 실행</button>
+    </div>
+    <div class="tbody" id="out"></div>
+    <div class="tin">
+      <button class="hbtn" data-h="가위">✌️ 가위</button>
+      <button class="hbtn" data-h="바위">✊ 바위</button>
+      <button class="hbtn" data-h="보">🖐 보</button>
+      <button class="hbtn quit" data-h="그만">그만</button>
+    </div>
+  </div>
+
+  <section class="codesec">
+    <h2>💻 학생이 작성한 파이썬 코드</h2>
+    <p class="lead">위 실행 화면은 아래 파이썬 코드를 웹 콘솔로 그대로 옮긴 것입니다.</p>
+    <pre><span class="k">import</span> random
+
+<span class="f">print</span>(<span class="s">"가위바위보 게임! ('그만'을 입력하면 종료)"</span>)
+win = <span class="n">0</span>
+draw = <span class="n">0</span>
+lose = <span class="n">0</span>
+
+<span class="k">while</span> <span class="k">True</span>:
+    me = <span class="f">input</span>(<span class="s">"나: "</span>)
+    <span class="k">if</span> me == <span class="s">"그만"</span>:
+        <span class="k">break</span>
+    com = random.<span class="f">choice</span>([<span class="s">"가위"</span>, <span class="s">"바위"</span>, <span class="s">"보"</span>])
+    <span class="f">print</span>(<span class="s">f"컴퓨터: {com}"</span>)
+    <span class="k">if</span> me == com:
+        draw = draw + <span class="n">1</span>
+        <span class="f">print</span>(<span class="s">"비겼다!"</span>)
+    <span class="k">elif</span> (me == <span class="s">"가위"</span> <span class="k">and</span> com == <span class="s">"보"</span>) <span class="k">or</span> \
+         (me == <span class="s">"바위"</span> <span class="k">and</span> com == <span class="s">"가위"</span>) <span class="k">or</span> \
+         (me == <span class="s">"보"</span> <span class="k">and</span> com == <span class="s">"바위"</span>):
+        win = win + <span class="n">1</span>
+        <span class="f">print</span>(<span class="s">"이겼다!"</span>)
+    <span class="k">else</span>:
+        lose = lose + <span class="n">1</span>
+        <span class="f">print</span>(<span class="s">"졌다..."</span>)
+
+<span class="f">print</span>(<span class="s">f"전적: {win}승 {draw}무 {lose}패"</span>)</pre>
+    <div class="pts">
+      <div class="pt"><b>🎲 random.choice</b><p>리스트에서 하나를 무작위로 뽑습니다.<br>컴퓨터의 가위바위보가 여기서 결정됩니다.</p></div>
+      <div class="pt"><b>🧮 and / or 조건 조합</b><p>"내가 이기는 세 가지 경우"를 <code>or</code>로 묶어 한 번에 판정합니다.</p></div>
+      <div class="pt"><b>📊 변수로 전적 기록</b><p><code>win</code>, <code>draw</code>, <code>lose</code> 세 변수에 결과를 쌓아 마지막에 전적을 발표합니다.</p></div>
+    </div>
+  </section>
+</div>
+
+<script>
+(function () {
+  var out = document.getElementById("out");
+  var rerun = document.getElementById("rerun");
+  var btns = Array.prototype.slice.call(document.querySelectorAll(".hbtn"));
+  var EMO = { "가위": "✌️", "바위": "✊", "보": "🖐" };
+  var win = 0, draw = 0, lose = 0, over = false;
+
+  function print(text, cls) {
+    var d = document.createElement("div");
+    d.className = "ln" + (cls ? " " + cls : "");
+    d.textContent = text;
+    out.appendChild(d);
+    out.scrollTop = out.scrollHeight;
+  }
+
+  function run() {
+    out.innerHTML = "";
+    win = 0; draw = 0; lose = 0; over = false;
+    btns.forEach(function (b) { b.disabled = false; });
+    print("$ python rsp.py", "sys");
+    print("가위바위보 게임! ('그만'을 누르면 종료)");
+  }
+
+  function play(me) {
+    if (over) return;
+    if (me === "그만") {
+      print("나: 그만", "in");
+      print("전적: " + win + "승 " + draw + "무 " + lose + "패", "score");
+      var total = win + draw + lose;
+      if (total === 0) print("한 판도 안 하고 가다니...!", "sys");
+      else if (win > lose) print("🏆 당신의 승리! 컴퓨터가 분해합니다.", "win");
+      else if (win < lose) print("🤖 컴퓨터의 승리! 다음에 설욕하세요.", "lose");
+      else print("팽팽한 무승부!", "draw");
+      print("↻ 다시 실행을 누르면 새 대결이 시작됩니다.", "sys");
+      over = true;
+      btns.forEach(function (b) { b.disabled = true; });
+      return;
+    }
+    var com = ["가위", "바위", "보"][Math.floor(Math.random() * 3)];
+    print("나: " + me + " " + EMO[me], "in");
+    print("컴퓨터: " + com + " " + EMO[com], "com");
+    if (me === com) { draw++; print("비겼다!", "draw"); }
+    else if ((me === "가위" && com === "보") || (me === "바위" && com === "가위") || (me === "보" && com === "바위")) {
+      win++; print("이겼다!", "win");
+    } else { lose++; print("졌다...", "lose"); }
+  }
+
+  btns.forEach(function (b) {
+    b.addEventListener("click", function () { play(b.getAttribute("data-h")); });
+  });
+  rerun.addEventListener("click", run);
+  run();
+})();
+</script>
+</body>
+</html>

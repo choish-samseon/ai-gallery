@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>게임 개발 프로젝트 | 삼선중학교 온라인 산출물 전시관</title>
+  <meta name="description" content="학생들이 직접 기획하고 개발한 게임을 브라우저에서 바로 플레이해 보세요.">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ctext y=%27.9em%27 font-size=%2790%27%3E%F0%9F%8E%A8%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    :root { --room-color: var(--room-game); }
+  </style>
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="../index.html" class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        삼선중학교 온라인 산출물 전시관
+      </a>
+      <button class="nav-toggle" aria-expanded="false" aria-controls="gnb">메뉴</button>
+      <nav class="gnb" id="gnb" aria-label="전시관 메뉴">
+        <a href="minecraft.html">마인크래프트</a>
+        <a href="aiphoto.html">AI 사진전</a>
+        <a href="hamster.html">햄스터 로봇</a>
+        <a href="game.html" class="active">게임 개발</a>
+        <a href="physical.html">피지컬 컴퓨팅</a>
+        <a href="codelab.html">코드설계소</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="page-hero">
+      <div class="container">
+        <p class="room-no">제4전시관</p>
+        <h1>게임 개발 프로젝트</h1>
+        <p>
+          아이디어 스케치부터 규칙 설계, 코딩, 테스트까지 —
+          학생들이 직접 만든 게임입니다.<br>
+작품을 클릭하면
+          브라우저에서 바로 플레이할 수 있습니다.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="container">
+        <h2>작품 목록</h2>
+        <div class="work-grid" id="workGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <p>삼선중학교 AI 중점학교 · 온라인 산출물 전시관</p>
+      <p>본 사이트의 작품 저작권은 각 학생에게 있습니다.</p>
+    </div>
+  </footer>
+
+  <script>
+    // ============================================
+    // 작품 데이터 — 여기만 수정하면 됩니다!
+    //
+    // 게임 작품 추가 방법:
+    // 1. 아래 배열에 { } 블록 하나를 복사해 붙여 넣는다
+    // 2. 내용을 고친다
+    //    - title  : 게임 제목
+    //    - intent   : 게임 소개 (카드에 표시)
+    //    - controls : 조작키 설명 (팝업에만 표시)
+    //    - details  : (선택) 팝업용 소개. 없으면 intent가 팝업에도 표시된다
+    //    - embed  : 게임 실행 주소
+    //        · MakeCode https://arcade.makecode.com/---run?id=공유ID
+    //        · 엔트리   https://playentry.org/iframe/작품ID
+    //        · 스크래치 https://scratch.mit.edu/projects/작품ID/embed
+    //        · HTML5 게임: games/폴더명/index.html 로 넣고 "../games/폴더명/index.html"
+    //    - images : (선택) 게임 스크린샷. 첫 장이 카드 썸네일이 된다.
+    //               없으면 파란 배경에 ▶ 아이콘이 표시된다.
+    // ============================================
+    window.WORKS = [
+      {
+        title: "고양이 점프맵",
+        intent: "고양이가 되어 발판을 뛰어넘으며 맵을 통과하는 점프 게임입니다.",
+        controls: "좌우 방향키: 이동 · Space: 점프",
+        details: "고양이가 되어 코인을 모두 모아 맵을 통과해보세요.",
+        embed: "https://arcade.makecode.com/---run?id=S30046-95236-26482-91396&nofooter=1&embed=1",
+        images: ["../images/game/thumb-cat-jump.webp"]
+      },
+      {
+        title: "공룡 레이드",
+        intent: "자동차를 피해 공룡을 물리치는 액션 게임입니다.",
+        controls: "상하좌우 방향키: 이동 · X: 공격",
+        details: "달려오는 자동차를 피해 공룡을 물리쳐보세요.",
+        embed: "https://arcade.makecode.com/---run?id=S27009-99270-48167-87766&nofooter=1&embed=1",
+        images: ["../images/game/thumb-dino.webp"]
+      },
+      {
+        title: "상어키우기",
+        intent: "바닷속에서 먹이를 먹으며 점수를 쌓는 게임입니다.",
+        controls: "상하좌우 방향키: 이동",
+        details: "바닷속에서 공룡을 피해 먹이를 먹으며 높은 점수를 쌓는 게임입니다.",
+        embed: "https://arcade.makecode.com/---run?id=S41249-31008-75029-00216&nofooter=1&embed=1",
+        images: ["../images/game/thumb-shark.webp"]
+      },
+      {
+        title: "동물 침공",
+        intent: "몰려오는 동물들의 침공을 막아내는 슈팅 게임입니다.",
+        controls: "상하좌우 방향키: 이동 · Z: 공격 · X: 대쉬",
+        details: "몰려오는 동물들의 침공을 막아내는 슈팅 게임입니다.\n점수가 -로 가지 않게 주의하세요!",
+        embed: "https://arcade.makecode.com/---run?id=S17610-94629-79075-57861&nofooter=1&embed=1",
+        images: ["../images/game/thumb-invasion.webp"]
+      },
+      {
+        title: "슬라임 탈출기",
+        intent: "슬라임이 되어 유령을 피해 미로를 탈출하는 게임입니다.",
+        controls: "상하좌우 방향키: 이동 · Z: 앞 공격 · X: 뒤 공격",
+        embed: "https://arcade.makecode.com/---run?id=S46379-52623-58926-05824&nofooter=1&embed=1",
+        images: ["../images/game/thumb-slime.webp"]
+      },
+      {
+        title: "Bounce Ball",
+        intent: "튕기는 공을 시간 안에 목적지까지 이동시키세요.",
+        controls: "상하좌우 방향키: 이동",
+        embed: "https://arcade.makecode.com/---run?id=S12108-43212-31795-59681&nofooter=1&embed=1",
+        images: ["../images/game/thumb-ball.webp"]
+      },
+      {
+        title: "고양이 마리오",
+        intent: "고양이 주인공이 장애물을 넘고 스테이지를 클리어하는 횡스크롤 게임입니다.",
+        controls: "좌우 방향키: 이동 · 위 방향키: 점프",
+        embed: "https://arcade.makecode.com/---run?id=S80880-48932-99442-96379&nofooter=1&embed=1",
+        images: ["../images/game/thumb-cat-mario.webp"]
+      },
+      {
+        title: "하늘을 날아서",
+        intent: "하늘을 날며 장애물을 피해 멀리 날아가는 게임입니다.",
+        controls: "스페이스바",
+        embed: "https://arcade.makecode.com/---run?id=S21818-56017-64287-56061&nofooter=1&embed=1",
+        images: ["../images/game/thumb-sky.webp"]
+      }
+    ];
+  </script>
+  <script>
+/* ===== gallery.js (인라인 내장) ===== */
+// ============================================
+// 작품 팝업 갤러리 (전시관 공용)
+// 사용법: 페이지에서 window.WORKS 배열을 정의하고
+//        renderWorkGallery("컨테이너 선택자")를 호출
+// ============================================
+
+function renderWorkGallery(gridSelector) {
+  const grid = document.querySelector(gridSelector);
+  const works = window.WORKS || [];
+  if (!grid || works.length === 0) return;
+
+  // ----- 카드 생성 -----
+  works.forEach((work, idx) => {
+    const card = document.createElement("button");
+    card.className = "work-card";
+    card.type = "button";
+    card.setAttribute("aria-haspopup", "dialog");
+    const hasImg = work.images && work.images.length > 0;
+    const thumbHtml = hasImg
+      ? `<img src="${work.images[0]}" alt="${work.title} 대표 사진" loading="lazy">`
+      : `<span class="thumb-play" aria-hidden="true">${work.embed ? "▶" : "🖼"}</span>`;
+    const n = (work.images || []).length;
+    const badge = work.embed
+      ? `<span class="work-count">${work.badge || "플레이 가능"}</span>`
+      : `<span class="work-count">${n > 0 ? `사진 ${n}장` : "준비 중"}</span>`;
+    card.innerHTML = `
+      <div class="work-thumb${hasImg ? "" : " no-img"}">
+        ${thumbHtml}
+        ${badge}
+      </div>
+      <div class="work-body">
+        <p class="work-title">${work.title}</p>
+        ${work.author ? `<p class="work-author">${work.author}</p>` : ""}
+        <p class="work-intent">${work.intent}</p>
+      </div>`;
+    card.addEventListener("click", () => openModal(idx));
+    grid.appendChild(card);
+  });
+
+  // ----- 모달 생성 -----
+  const modal = document.createElement("div");
+  modal.className = "gallery-modal";
+  modal.setAttribute("role", "dialog");
+  modal.setAttribute("aria-modal", "true");
+  modal.innerHTML = `
+    <div class="gm-panel">
+      <div class="gm-head">
+        <div>
+          <p class="gm-title"></p>
+          <p class="gm-author"></p>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <a class="gm-open-new" href="#" target="_blank" rel="noopener" hidden>크게 보기 ↗</a>
+          <button class="gm-close" aria-label="닫기">✕</button>
+        </div>
+      </div>
+      <div class="gm-stage">
+        <img alt="">
+        <div class="gm-embed" hidden><iframe title="" allowfullscreen allow="autoplay; fullscreen; gamepad"></iframe></div>
+        <button class="gm-nav gm-prev" aria-label="이전 사진">←</button>
+        <button class="gm-nav gm-next" aria-label="다음 사진">→</button>
+        <span class="gm-counter"></span>
+      </div>
+      <p class="gm-controls" hidden></p>
+      <p class="gm-intent"></p>
+    </div>`;
+  document.body.appendChild(modal);
+
+  const el = {
+    title: modal.querySelector(".gm-title"),
+    author: modal.querySelector(".gm-author"),
+    img: modal.querySelector(".gm-stage img"),
+    embed: modal.querySelector(".gm-embed"),
+    iframe: modal.querySelector(".gm-embed iframe"),
+    counter: modal.querySelector(".gm-counter"),
+    intent: modal.querySelector(".gm-intent"),
+    controls: modal.querySelector(".gm-controls"),
+    prev: modal.querySelector(".gm-prev"),
+    next: modal.querySelector(".gm-next"),
+    close: modal.querySelector(".gm-close"),
+    openNew: modal.querySelector(".gm-open-new"),
+  };
+
+  let current = 0;   // 현재 작품 인덱스
+  let photo = 0;     // 현재 사진 인덱스
+  let lastFocus = null;
+
+  function showPhoto() {
+    const w = works[current];
+    if (!w.images || w.images.length === 0) {
+      el.img.style.display = "none";
+      el.counter.textContent = "사진 준비 중";
+      el.prev.style.display = "none";
+      el.next.style.display = "none";
+      return;
+    }
+    el.img.src = w.images[photo];
+    el.img.alt = `${w.title} 사진 ${photo + 1}`;
+    el.counter.textContent = `${photo + 1} / ${w.images.length}`;
+    const single = w.images.length <= 1;
+    el.prev.style.display = single ? "none" : "";
+    el.next.style.display = single ? "none" : "";
+  }
+
+  function openModal(idx) {
+    current = idx;
+    photo = 0;
+    const w = works[idx];
+    el.title.textContent = w.title;
+    el.author.textContent = w.author || "";
+    el.author.style.display = w.author ? "" : "none";
+    const desc = (w.details !== undefined) ? w.details : w.intent;
+    el.intent.textContent = desc;
+    el.intent.style.display = desc ? "" : "none";
+    el.controls.hidden = !w.controls;
+    el.controls.textContent = w.controls ? "🎮 " + w.controls : "";
+    modal.classList.toggle("has-embed", !!w.embed);
+    el.openNew.hidden = !w.embed;
+    if (w.embed) el.openNew.href = w.embed;
+    if (w.embed) {
+      el.img.style.display = "none";
+      el.counter.style.display = "none";
+      el.prev.style.display = "none";
+      el.next.style.display = "none";
+      el.embed.hidden = false;
+      el.iframe.src = w.embed;
+      el.iframe.title = w.title;
+    } else if ((w.images || []).length > 0) {
+      el.img.style.display = "";
+      el.counter.style.display = "";
+      el.embed.hidden = true;
+      el.iframe.src = "about:blank";
+      showPhoto();
+    } else {
+      // 사진이 아직 없는 작품: 무대 없이 소개만
+      el.img.style.display = "none";
+      el.counter.style.display = "none";
+      el.prev.style.display = "none";
+      el.next.style.display = "none";
+      el.embed.hidden = true;
+      el.iframe.src = "about:blank";
+    }
+    lastFocus = document.activeElement;
+    modal.classList.add("open");
+    document.body.style.overflow = "hidden";
+    el.close.focus();
+  }
+
+  function closeModal() {
+    el.iframe.src = "about:blank";
+    modal.classList.remove("open");
+    document.body.style.overflow = "";
+    if (lastFocus) lastFocus.focus();
+  }
+
+  const move = (dir) => {
+    const n = works[current].images.length;
+    photo = (photo + dir + n) % n;
+    showPhoto();
+  };
+
+  el.prev.addEventListener("click", () => move(-1));
+  el.next.addEventListener("click", () => move(1));
+  el.close.addEventListener("click", closeModal);
+  modal.addEventListener("click", (e) => { if (e.target === modal) closeModal(); });
+
+  document.addEventListener("keydown", (e) => {
+    if (!modal.classList.contains("open")) return;
+    if (e.key === "Escape") closeModal();
+    if (e.key === "ArrowLeft") move(-1);
+    if (e.key === "ArrowRight") move(1);
+  });
+}
+</script>
+  <script>renderWorkGallery("#workGrid");</script>
+  <script>
+/* ===== main.js (인라인 내장) ===== */
+// 모바일 내비게이션 토글
+(function () {
+  const btn = document.querySelector(".nav-toggle");
+  const gnb = document.getElementById("gnb");
+  if (!btn || !gnb) return;
+
+  btn.addEventListener("click", () => {
+    const open = gnb.classList.toggle("open");
+    btn.setAttribute("aria-expanded", String(open));
+  });
+})();
+
+
+// 스크롤 리빌 — 대상 요소에 자동으로 클래스 부여 후 등장 감지
+(function () {
+
+  const targets = document.querySelectorAll(
+    ".floor-head, .room, .about-band h2, .about-band p, " +
+    ".section h2, .work-card, .photo-grid figure, .embed-card, .page-hero .container > *"
+  );
+  if (!("IntersectionObserver" in window) || targets.length === 0) return;
+
+  targets.forEach((t) => t.classList.add("reveal"));
+
+  // 형제끼리는 순차 등장 (최대 5단계 시차)
+  const groups = new Map();
+  targets.forEach((t) => {
+    const key = t.parentElement;
+    const n = groups.get(key) || 0;
+    t.style.setProperty("--reveal-delay", `${Math.min(n, 5) * 0.08}s`);
+    groups.set(key, n + 1);
+  });
+
+  const io = new IntersectionObserver((es) => {
+    es.forEach((e) => {
+      if (e.isIntersecting) {
+        e.target.classList.add("in");
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.12 });
+
+  targets.forEach((t) => io.observe(t));
+})();
+
+// 헤더 그림자
+(function () {
+  const header = document.querySelector(".site-header");
+  if (!header) return;
+  const onScroll = () => header.classList.toggle("scrolled", window.scrollY > 8);
+  onScroll();
+  window.addEventListener("scroll", onScroll, { passive: true });
+})();
+
+
+// 히어로: 강조 단어 순환 (게임 → 건축물 → 로봇 → AI 작품)
+(function () {
+  const el = document.getElementById("cycleWord");
+  if (!el) return;
+
+  const words = [
+    ["게임", "var(--room-game)"],
+    ["건축물", "var(--room-mine)"],
+    ["로봇", "var(--room-ham)"],
+    ["AI 작품", "var(--room-ai)"],
+  ];
+  let i = 0;
+
+  const setWord = () => {
+    el.textContent = words[i][0];
+    el.style.setProperty("--cycle-color", words[i][1]);
+  };
+  setWord();
+
+  setInterval(() => {
+    el.classList.add("swap");
+    setTimeout(() => {
+      i = (i + 1) % words.length;
+      setWord();
+      el.classList.remove("swap");
+    }, 360);
+  }, 2400);
+})();
+
+// 떠다니는 배경 도형 — 물리 시뮬레이션 (상호 충돌 + 마우스 타격)
+(function () {
+  const colors = [
+    "var(--room-game)", "var(--room-mine)", "var(--room-phys)",
+    "var(--room-code)", "var(--room-ham)", "var(--room-ai)",
+  ];
+  const shapes = [
+    "fs-square", "fs-circle", "fs-triangle", "fs-plus", "fs-ring",
+    "fs-diamond", "fs-star", "fs-hexagon", "fs-pill",
+  ];
+
+  // [left%, top%, size, 회전주기(s), 방향, 도형, 색번호]
+  const FIELDS = {
+    hero: [
+      [5, 14, 26, 22, 1, 0, 0],  [13, 70, 18, 30, -1, 1, 1],
+      [29, 9, 15, 18, 1, 2, 2],  [45, 80, 22, 26, -1, 3, 3],
+      [57, 7, 16, 34, 1, 4, 4],  [71, 64, 30, 24, 1, 0, 5],
+      [84, 20, 18, 20, -1, 2, 0],[92, 72, 24, 28, 1, 1, 2],
+      [23, 42, 11, 16, -1, 3, 4],[66, 34, 12, 21, 1, 4, 5],
+      [9, 44, 14, 36, -1, 2, 3], [38, 26, 20, 27, 1, 4, 1],
+      [52, 58, 13, 19, -1, 3, 0],[78, 44, 15, 31, 1, 1, 5],
+      [96, 40, 12, 23, -1, 0, 4],[34, 90, 16, 25, 1, 2, 5],
+      [18, 22, 13, 24, 1, 5, 2], [62, 18, 17, 29, -1, 6, 0],
+      [88, 52, 14, 21, 1, 7, 3], [42, 66, 19, 33, -1, 8, 1],
+      [7, 82, 12, 17, 1, 6, 4],  [27, 58, 16, 26, -1, 7, 5],
+      [73, 82, 13, 22, 1, 5, 0], [94, 10, 15, 28, -1, 8, 2],
+      [49, 36, 10, 15, 1, 6, 3], [33, 8, 12, 20, -1, 5, 4],
+    ],
+    floor: [
+      [3, 10, 18, 26, 1, 1, 0],  [96, 14, 22, 30, -1, 0, 2],
+      [2, 62, 14, 20, -1, 3, 4], [97, 66, 16, 24, 1, 2, 1],
+      [8, 90, 20, 28, 1, 4, 5],  [92, 92, 13, 18, -1, 2, 3],
+      [50, 3, 15, 32, -1, 0, 5], [30, 95, 12, 22, 1, 1, 4],
+      [5, 35, 15, 23, 1, 6, 5],  [95, 40, 13, 27, -1, 5, 3],
+      [12, 8, 12, 19, 1, 7, 1],  [88, 8, 14, 25, -1, 8, 0],
+      [20, 80, 13, 21, 1, 5, 2], [80, 85, 15, 29, -1, 6, 4],
+    ],
+  };
+
+  // 화면 폭에 비례한 배율 (1440px 기준, 최대 1.7배)
+  const k = Math.min(1.7, Math.max(1, window.innerWidth / 1440));
+  const worlds = [];
+
+  document.querySelectorAll(".float-field").forEach((layer) => {
+    const spots = FIELDS[layer.dataset.float];
+    if (!spots) return;
+    const host = layer.parentElement || layer;
+
+    const parts = spots.map(([l, t, s0, spin, dir, shape, ci]) => {
+      const size = Math.round(s0 * k);
+      const el = document.createElement("span");
+      el.className = shapes[shape] + " phys";
+      el.style.width = size + "px";
+      el.style.height = size + "px";
+      if (shapes[shape] === "fs-ring") {
+        el.style.setProperty("--ring-color", colors[ci]);
+        el.style.borderWidth = Math.max(3, Math.round(size / 6)) + "px";
+      } else {
+        el.style.background = colors[ci];
+      }
+      layer.appendChild(el);
+      const a = Math.random() * Math.PI * 2;
+      return {
+        el, lp: l / 100, tp: t / 100,
+        r: size / 2, m: size * size,
+        x: 0, y: 0, hx: 0, hy: 0,
+        vx: Math.cos(a) * 14, vy: Math.sin(a) * 14,
+        ang: Math.random() * 360,
+        baseAv: (360 / spin) * dir,   // deg/s
+        extraAv: 0,
+        glow: 0,
+      };
+    });
+
+    const w = {
+      layer, host, parts, W: 0, H: 0,
+      mx: -1e4, my: -1e4, mvx: 0, mvy: 0, mt: 0,
+    };
+
+    w.measure = () => {
+      w.W = layer.offsetWidth;
+      w.H = layer.offsetHeight;
+      parts.forEach((p) => {
+        p.hx = p.lp * w.W;
+        p.hy = p.tp * w.H;
+        if (p.x === 0 && p.y === 0) { p.x = p.hx; p.y = p.hy; }
+        p.x = Math.min(Math.max(p.x, p.r), w.W - p.r);
+        p.y = Math.min(Math.max(p.y, p.r), w.H - p.r);
+      });
+    };
+    w.measure();
+    window.addEventListener("resize", w.measure);
+
+    host.addEventListener("pointermove", (e) => {
+      const rc = layer.getBoundingClientRect();
+      const nx = e.clientX - rc.left, ny = e.clientY - rc.top;
+      const now = performance.now();
+      if (w.mt) {
+        const dt = Math.max(0.008, (now - w.mt) / 1000);
+        w.mvx = (nx - w.mx) / dt;
+        w.mvy = (ny - w.my) / dt;
+      }
+      w.mx = nx; w.my = ny; w.mt = now;
+    });
+    host.addEventListener("pointerleave", () => {
+      w.mx = -1e4; w.my = -1e4; w.mvx = 0; w.mvy = 0; w.mt = 0;
+    });
+
+    worlds.push(w);
+  });
+
+  if (worlds.length === 0) return;
+
+  const MOUSE_R = 52;       // 마우스 충돌 반경
+  const REST = 0.92;        // 도형끼리 반발 계수
+  const WALL_REST = 0.78;   // 벽 반발 계수
+
+  let last = performance.now();
+
+  function step(now) {
+    let dt = (now - last) / 1000;
+    last = now;
+    if (dt <= 0 || dt > 0.08) dt = 0.016;
+
+    worlds.forEach((w) => {
+      const ps = w.parts;
+      const drag = Math.exp(-0.85 * dt);
+      const avDecay = Math.exp(-1.6 * dt);
+      const glowDecay = Math.exp(-2.6 * dt);
+      const mSpeed = Math.min(2200, Math.hypot(w.mvx, w.mvy));
+
+      // ----- 개별 운동 -----
+      for (const p of ps) {
+        // 홈 위치로 아주 약하게 복귀 + 무작위 흔들림
+        p.vx += (p.hx - p.x) * 0.22 * dt + (Math.random() - 0.5) * 26 * dt;
+        p.vy += (p.hy - p.y) * 0.22 * dt + (Math.random() - 0.5) * 26 * dt;
+        p.vx *= drag; p.vy *= drag;
+
+        // 마우스 타격: 커서 반경과 겹치면 커서 속도만큼 튕겨 나감
+        const mdx = p.x - w.mx, mdy = p.y - w.my;
+        const md = Math.hypot(mdx, mdy);
+        const minD = p.r + MOUSE_R;
+        if (md < minD && md > 0.001) {
+          const nx = mdx / md, ny = mdy / md;
+          const push = 240 + mSpeed * 0.75;
+          const vn = p.vx * nx + p.vy * ny;
+          if (vn < push) {
+            p.vx += nx * (push - vn);
+            p.vy += ny * (push - vn);
+          }
+          p.extraAv += (Math.random() - 0.5) * 540;
+          p.glow = 1;
+        }
+
+        // 속도 상한
+        const sp = Math.hypot(p.vx, p.vy);
+        if (sp > 1000) { p.vx *= 1000 / sp; p.vy *= 1000 / sp; }
+      }
+
+      // ----- 도형끼리 충돌 -----
+      for (let i = 0; i < ps.length; i++) {
+        for (let j = i + 1; j < ps.length; j++) {
+          const a = ps[i], b = ps[j];
+          const dx = b.x - a.x, dy = b.y - a.y;
+          const d = Math.hypot(dx, dy);
+          const minD = a.r + b.r;
+          if (d >= minD || d < 0.001) continue;
+          const nx = dx / d, ny = dy / d;
+
+          // 겹침 분리 (질량 반비례)
+          const overlap = minD - d;
+          const ima = 1 / a.m, imb = 1 / b.m, imSum = ima + imb;
+          a.x -= nx * overlap * (ima / imSum);
+          a.y -= ny * overlap * (ima / imSum);
+          b.x += nx * overlap * (imb / imSum);
+          b.y += ny * overlap * (imb / imSum);
+
+          // 법선 방향 충격량 교환
+          const rvn = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+          if (rvn < 0) {
+            const jImp = -(1 + REST) * rvn / imSum;
+            a.vx -= nx * jImp * ima; a.vy -= ny * jImp * ima;
+            b.vx += nx * jImp * imb; b.vy += ny * jImp * imb;
+            const kick = Math.min(360, Math.abs(jImp) * 0.004);
+            a.extraAv -= kick * (Math.random() < 0.5 ? 1 : -1);
+            b.extraAv += kick * (Math.random() < 0.5 ? 1 : -1);
+            if (Math.abs(rvn) > 90) { a.glow = Math.max(a.glow, 0.7); b.glow = Math.max(b.glow, 0.7); }
+          }
+        }
+      }
+
+      // ----- 이동·벽 반사·렌더 -----
+      for (const p of ps) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        if (p.x < p.r)        { p.x = p.r;        p.vx = Math.abs(p.vx) * WALL_REST; }
+        if (p.x > w.W - p.r)  { p.x = w.W - p.r;  p.vx = -Math.abs(p.vx) * WALL_REST; }
+        if (p.y < p.r)        { p.y = p.r;        p.vy = Math.abs(p.vy) * WALL_REST; }
+        if (p.y > w.H - p.r)  { p.y = w.H - p.r;  p.vy = -Math.abs(p.vy) * WALL_REST; }
+
+        p.extraAv *= avDecay;
+        p.ang += (p.baseAv + p.extraAv) * dt;
+        p.glow *= glowDecay;
+
+        p.el.style.transform =
+          "translate(" + (p.x - p.r).toFixed(1) + "px," + (p.y - p.r).toFixed(1) + "px) " +
+          "rotate(" + p.ang.toFixed(1) + "deg)";
+        p.el.style.opacity = (0.22 + p.glow * 0.3).toFixed(2);
+      }
+
+      // 마우스 속도는 매 프레임 감쇠 (멈춘 커서가 계속 밀지 않도록)
+      w.mvx *= 0.8; w.mvy *= 0.8;
+    });
+
+    requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
+})();
+
+// 부드러운 스크롤 자체 엔진 — 브라우저·OS 설정과 무관하게 항상 동작
+window.__smoothScroll = (function () {
+  let rafId = 0;
+  return function (targetY, duration) {
+    if (rafId) cancelAnimationFrame(rafId);
+    const startY = window.scrollY;
+    const dist = targetY - startY;
+    if (Math.abs(dist) < 2) { window.scrollTo(0, targetY); return; }
+    const dur = duration || Math.min(900, 450 + Math.abs(dist) * 0.25);
+    const t0 = performance.now();
+    const ease = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
+    const frame = (now) => {
+      const t = Math.min(1, (now - t0) / dur);
+      window.scrollTo(0, startY + dist * ease(t));
+      rafId = t < 1 ? requestAnimationFrame(frame) : 0;
+    };
+    rafId = requestAnimationFrame(frame);
+  };
+})();
+
+// 페이지 내 앵커(#) 이동도 자체 엔진으로 — 설정과 무관하게 부드럽게
+(function () {
+  const HEADER = 64;
+  document.querySelectorAll('a[href^="#"]').forEach((a) => {
+    a.addEventListener("click", (e) => {
+      const id = a.getAttribute("href").slice(1);
+      const el = id && document.getElementById(id);
+      if (!el) return;
+      e.preventDefault();
+      const top = el.getBoundingClientRect().top + window.scrollY - HEADER;
+      window.__smoothScroll(top, 750);
+      if (history.pushState) history.pushState(null, "", "#" + id);
+    });
+  });
+})();
+
+// 스크롤 스냅: 히어로 ↔ 전시관 안내 사이는 휠 한 번에 이동
+(function () {
+  const floor = document.getElementById("floor");
+  const hero = document.querySelector(".hero");
+  if (!floor || !hero) return;
+
+  const HEADER = 64;
+  let animating = false;
+
+  const go = (top) => {
+    animating = true;
+    window.__smoothScroll(top, 700);
+    setTimeout(() => { animating = false; }, 780);
+  };
+
+  window.addEventListener("wheel", (e) => {
+    if (animating) { e.preventDefault(); return; }
+    const floorTop = floor.getBoundingClientRect().top + window.scrollY - HEADER;
+    const y = window.scrollY;
+
+    // 히어로 구간에서 아래로 → 전시관 안내로 스냅
+    if (e.deltaY > 0 && y < floorTop - 40) {
+      e.preventDefault();
+      go(floorTop);
+    }
+    // 전시관 안내 상단 근처에서 위로 → 히어로로 스냅
+    else if (e.deltaY < 0 && y > 10 && y <= floorTop + 40) {
+      e.preventDefault();
+      go(0);
+    }
+  }, { passive: false });
+})();
+</script>
+</body>
+</html>
