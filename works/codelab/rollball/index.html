@@ -40,6 +40,14 @@
   #pad button { border: none; border-radius: 14px; background: rgba(255,255,255,.16);
     color: #fff; font-size: 1.3rem; font-weight: 900; backdrop-filter: blur(3px); }
   #pad button:active { background: rgba(226,86,74,.6); }
+  @media (max-height: 540px) {
+    .overlay { gap: 8px; justify-content: flex-start; padding-top: 16px; overflow-y: auto; }
+    .overlay h1 { font-size: 1.3rem; }
+    .overlay p { font-size: 0.8rem; line-height: 1.45; }
+    .overlay .keys { display: none; }
+    .overlay button { padding: 9px 28px; font-size: 0.95rem; margin-top: 2px; }
+    .overlay .tag { display: none; }
+  }
   #pU { grid-column: 2; grid-row: 1; } #pL { grid-column: 1; grid-row: 2; }
   #pD { grid-column: 2; grid-row: 2; } #pR { grid-column: 3; grid-row: 2; }
 </style>

@@ -139,6 +139,7 @@ a:focus-visible, button:focus-visible {
 .hero {
   position: relative;
   min-height: calc(100vh - 64px);
+  min-height: calc(100dvh - 64px);
   min-height: calc(100svh - 64px);
   display: flex;
   align-items: center;
@@ -288,6 +289,7 @@ a:focus-visible, button:focus-visible {
 /* ---------- 전시관 평면도 ---------- */
 .floor {
   min-height: calc(100vh - 64px);
+  min-height: calc(100dvh - 64px);
   min-height: calc(100svh - 64px);
   display: flex;
   align-items: center;
@@ -395,6 +397,21 @@ a:focus-visible, button:focus-visible {
 
 @media (max-height: 560px) {
   .hero { min-height: auto; padding-bottom: 84px; }
+}
+
+/* 폰 가로모드 등 낮은 화면: 팝업 속 게임이 세로 공간을 최대한 쓰도록 */
+@media (max-height: 600px) {
+  .gallery-modal.has-embed { padding: 8px; }
+  .gallery-modal.has-embed .gm-head { padding: 10px 16px 8px; }
+  .gallery-modal.has-embed .gm-embed {
+    aspect-ratio: auto;
+    width: 100%;
+    height: calc(100vh - 120px);
+    height: calc(100dvh - 120px);
+    min-height: 180px;
+  }
+  .gallery-modal.has-embed .gm-intent,
+  .gallery-modal.has-embed .gm-controls { display: none; }
 }
 
 /* ---------- 소개 밴드 ---------- */
@@ -632,6 +649,7 @@ a:focus-visible, button:focus-visible {
   max-width: 860px;
   width: 100%;
   max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -671,6 +689,7 @@ a:focus-visible, button:focus-visible {
 .gm-stage img {
   width: 100%;
   max-height: 56vh;
+  max-height: 56dvh;
   object-fit: contain;
   margin: 0 auto;
 }
@@ -713,7 +732,7 @@ a:focus-visible, button:focus-visible {
 }
 
 @media (max-width: 540px) {
-  .gm-stage img { max-height: 44vh; }
+  .gm-stage img { max-height: 44vh; max-height: 44dvh; }
 }
 
 /* ---------- 게임 임베드 팝업 ---------- */
@@ -737,6 +756,7 @@ a:focus-visible, button:focus-visible {
      화면이 낮으면 높이 74vh를 넘지 않도록 너비를 함께 줄인다. */
   aspect-ratio: 100 / 82;
   width: min(100%, calc(74vh * 100 / 82));
+  width: min(100%, calc(74dvh * 100 / 82));
   margin: 0 auto;
   background: #10131c;
 }
@@ -747,6 +767,16 @@ a:focus-visible, button:focus-visible {
   width: 100%;
   height: 100%;
   border: 0;
+}
+
+@media (max-width: 540px) {
+  .gallery-modal { padding: 10px; }
+  .gm-embed {
+    aspect-ratio: auto;
+    width: 100%;
+    height: min(62vh, 480px);
+    height: min(62dvh, 480px);
+  }
 }
 
 .gm-controls {

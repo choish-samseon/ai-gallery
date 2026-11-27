@@ -35,7 +35,10 @@
       background: #fff; border: 1px solid var(--line, #e3e8ef); border-radius: 18px;
       padding: 22px 24px; align-items: center;
     }
-    @media (max-width: 880px) { .mission-card { grid-template-columns: auto 1fr; } .track-box { grid-column: 1 / -1; max-width: 340px; margin: 0 auto; } }
+    @media (max-width: 880px) { .mission-card { grid-template-columns: auto 1fr; } .track-box { grid-column: 1 / -1; max-width: 340px; margin: 0 auto; width: 100%; } }
+    /* 코드 블록(가로로 긴 내용)이 그리드 열을 넓혀 영상·트랙을 밀어내지 않도록 고정 */
+    .mc-body { min-width: 0; }
+    .blocks { max-width: 100%; }
     .mc-rail { display: flex; flex-direction: column; align-items: center; gap: 8px; align-self: stretch; }
     .mc-no {
       width: 44px; height: 44px; border-radius: 50%; background: var(--room-ham); color: #fff;
